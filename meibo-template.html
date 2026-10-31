@@ -1,0 +1,204 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>名簿管理</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1d2330;--sub:#6b7385;--line:#dfe3ea;--accent:#2563eb;--accent-text:#fff;--danger:#d92d20;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--card:#1e222b;--text:#e8eaf0;--sub:#9aa2b3;--line:#323847;--accent:#5b8cff;--accent-text:#0b1020;--danger:#ff6b60;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171d;--card:#1e222b;--text:#e8eaf0;--sub:#9aa2b3;--line:#323847;--accent:#5b8cff;--accent-text:#0b1020;--danger:#ff6b60;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;line-height:1.5}
+header{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:14px 16px;max-width:1000px;margin:0 auto}
+h1{font-size:20px;margin:0;margin-right:auto}
+input,select,textarea,button{font:inherit;color:var(--text)}
+input[type=search]{flex:1 1 200px;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+button{padding:9px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+button.danger{color:var(--danger)}
+button.sm{padding:6px 10px}
+main{max-width:1000px;margin:0 auto;padding:0 16px 40px}
+.count{color:var(--sub);font-size:13px;margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;gap:12px;cursor:pointer}
+.card:hover{border-color:var(--accent)}
+.ph{width:72px;height:72px;border-radius:50%;background:var(--line);flex:none;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:26px;overflow:hidden}
+.ph img{width:100%;height:100%;object-fit:cover}
+.info{min-width:0}
+.name{font-weight:600}
+.kana,.meta{color:var(--sub);font-size:13px;overflow-wrap:anywhere}
+.empty{text-align:center;color:var(--sub);padding:50px 0}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--text);padding:18px;width:min(460px,94vw);max-height:92vh;overflow:auto}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+label{display:block;font-size:13px;color:var(--sub);margin:10px 0 3px}
+dialog input:not([type=checkbox]),dialog textarea,dialog select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.photo-row{display:flex;gap:14px;align-items:center}
+.actions{display:flex;gap:8px;margin-top:16px}.actions .sp{margin-right:auto}
+.note{font-size:12px;color:var(--sub);margin-top:24px}
+h2{font-size:17px;margin:0 0 4px}
+.hint{font-size:12px;color:var(--sub);margin:0 0 12px}
+.frow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line)}
+.frow .lb{flex:1 1 130px;min-width:0;width:auto!important}
+.frow select{width:auto!important;flex:0 0 auto}
+.frow .chk{display:flex;align-items:center;gap:4px;margin:0;font-size:12px;white-space:nowrap}
+</style>
+</head>
+<body>
+<header>
+<h1>名簿管理</h1>
+<input type="search" id="q" placeholder="名前や項目の内容で検索">
+<button id="cfg">⚙ 項目設定</button>
+<button class="primary" id="add">＋ 追加</button>
+</header>
+<main>
+<p class="count" id="count"></p>
+<div class="grid" id="grid"></div>
+<p class="note">データはこのブラウザの中だけに保存されます。他の端末や他の人とは共有されません。</p>
+</main>
+
+<dialog id="dlg">
+<div class="photo-row">
+<div class="ph" id="pv">👤</div>
+<div>
+<input type="file" id="file" accept="image/*" hidden>
+<button type="button" id="pick">写真を選ぶ</button>
+<button type="button" id="clr">削除</button>
+</div>
+</div>
+<label>氏名</label><input id="name">
+<div id="fields"></div>
+<div class="actions">
+<button class="danger sp" id="del" type="button">この人を削除</button>
+<button type="button" id="cancel">キャンセル</button>
+<button class="primary" type="button" id="save">保存</button>
+</div>
+</dialog>
+
+<dialog id="sdlg">
+<h2>項目設定</h2>
+<p class="hint">項目名の変更、種類の変更、並べ替え、追加、削除ができます。「一覧」にチェックした項目は名簿のカードにも表示されます。</p>
+<div id="frows"></div>
+<div class="actions">
+<button type="button" id="fadd" class="sp">＋ 項目を追加</button>
+<button type="button" id="scancel">キャンセル</button>
+<button class="primary" type="button" id="ssave">完了</button>
+</div>
+</dialog>
+
+<script>
+(function(){
+var KEY="meibo-v1",FKEY="meibo-fields-v1";
+var TYPES=[["text","テキスト"],["textarea","長文"],["date","日付"],["tel","電話"],["email","メール"],["number","数値"]];
+var DEFAULTS=[
+{id:"kana",label:"ふりがな",type:"text",card:true},
+{id:"dept",label:"所属・役職",type:"text",card:true},
+{id:"join",label:"入社日",type:"date",card:false},
+{id:"tel",label:"電話",type:"tel",card:true},
+{id:"mail",label:"メール",type:"email",card:false},
+{id:"memo",label:"メモ",type:"textarea",card:false}];
+var people=[],fields=[],draft=[],editId=null,photo="";
+var $=function(i){return document.getElementById(i)};
+function clone(x){return JSON.parse(JSON.stringify(x))}
+function load(){
+try{var s=localStorage.getItem(KEY);people=s?JSON.parse(s):[]}catch(e){people=[]}
+try{var f=localStorage.getItem(FKEY);fields=f?JSON.parse(f):clone(DEFAULTS)}catch(e){fields=clone(DEFAULTS)}
+if(!Array.isArray(fields))fields=clone(DEFAULTS)}
+function store(){
+try{localStorage.setItem(KEY,JSON.stringify(people));localStorage.setItem(FKEY,JSON.stringify(fields))}
+catch(e){alert("保存できませんでした。写真が多すぎる可能性があります。")}}
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function setPv(){var p=$("pv");p.textContent="";if(photo){var im=document.createElement("img");im.src=photo;p.appendChild(im)}else p.textContent="👤"}
+function sortKey(p){var f=fields.filter(function(x){return x.label==="ふりがな"})[0];return (f&&p[f.id])||p.name||""}
+function render(){
+var q=$("q").value.trim().toLowerCase();
+var list=people.filter(function(p){
+if(!q)return true;
+var t=[p.name].concat(fields.map(function(f){return p[f.id]||""})).join(" ").toLowerCase();
+return t.indexOf(q)>-1})
+.sort(function(a,b){return sortKey(a).localeCompare(sortKey(b),"ja")});
+$("count").textContent=list.length+"名"+(q?"（全"+people.length+"名中）":"");
+var g=$("grid");g.textContent="";
+if(!list.length){g.appendChild(el("div","empty",people.length?"該当する人がいません":"まだ登録がありません。「＋ 追加」から始めてください。"));return}
+list.forEach(function(p){
+var c=el("div","card"),ph=el("div","ph");
+if(p.photo){var im=document.createElement("img");im.src=p.photo;ph.appendChild(im)}else ph.textContent=(p.name||"?").charAt(0);
+var inf=el("div","info");inf.appendChild(el("div","name",p.name));
+var n=0;fields.forEach(function(f,i){
+if(!f.card||!p[f.id]||n>=4)return;
+inf.appendChild(el("div",n===0?"kana":"meta",p[f.id]));n++});
+c.appendChild(ph);c.appendChild(inf);
+c.onclick=function(){openP(p.id)};g.appendChild(c)})}
+function buildForm(p){
+var box=$("fields");box.textContent="";
+fields.forEach(function(f){
+var lb=el("label",null,f.label),inp;
+if(f.type==="textarea"){inp=document.createElement("textarea");inp.rows=3}
+else{inp=document.createElement("input");inp.type=f.type}
+inp.value=p[f.id]||"";inp.setAttribute("data-fid",f.id);
+box.appendChild(lb);box.appendChild(inp)})}
+function openP(id){
+editId=id;var p=id?people.filter(function(x){return x.id===id})[0]:{};
+$("name").value=p.name||"";buildForm(p);
+photo=p.photo||"";setPv();$("del").style.display=id?"":"none";$("dlg").showModal()}
+function resize(file,cb){
+var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){
+var m=320,s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement("canvas");
+c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
+c.getContext("2d").drawImage(im,0,0,c.width,c.height);cb(c.toDataURL("image/jpeg",.8))};
+im.onerror=function(){alert("画像を読み込めませんでした。")};im.src=r.result};r.readAsDataURL(file)}
+function renderSet(){
+var box=$("frows");box.textContent="";
+draft.forEach(function(f,i){
+var row=el("div","frow");
+var up=el("button","sm","↑"),dn=el("button","sm","↓");
+up.type=dn.type="button";up.disabled=i===0;dn.disabled=i===draft.length-1;
+up.onclick=function(){var t=draft[i];draft[i]=draft[i-1];draft[i-1]=t;renderSet()};
+dn.onclick=function(){var t=draft[i];draft[i]=draft[i+1];draft[i+1]=t;renderSet()};
+var lb=document.createElement("input");lb.className="lb";lb.value=f.label;lb.placeholder="項目名";
+lb.oninput=function(){f.label=lb.value};
+var sel=document.createElement("select");
+TYPES.forEach(function(t){var o=document.createElement("option");o.value=t[0];o.textContent=t[1];if(t[0]===f.type)o.selected=true;sel.appendChild(o)});
+sel.onchange=function(){f.type=sel.value};
+var ck=el("label","chk");var cb=document.createElement("input");cb.type="checkbox";cb.checked=!!f.card;
+cb.onchange=function(){f.card=cb.checked};ck.appendChild(cb);ck.appendChild(document.createTextNode("一覧"));
+var rm=el("button","sm danger","🗑");rm.type="button";
+rm.onclick=function(){
+if(!confirm("「"+(f.label||"この項目")+"」を削除しますか？\n全員のこの項目の入力内容も消えます。"))return;
+draft.splice(i,1);renderSet()};
+[up,dn,lb,sel,ck,rm].forEach(function(x){row.appendChild(x)});box.appendChild(row)})}
+$("add").onclick=function(){openP(null)};
+$("q").oninput=render;
+$("pick").onclick=function(){$("file").click()};
+$("file").onchange=function(){var f=this.files[0];if(f)resize(f,function(d){photo=d;setPv()});this.value=""};
+$("clr").onclick=function(){photo="";setPv()};
+$("cancel").onclick=function(){$("dlg").close()};
+$("save").onclick=function(){
+var name=$("name").value.trim();if(!name){alert("氏名を入力してください。");return}
+if(!editId&&people.length>=5){toast("デモ版は5名までです。製品版は無制限に登録できます。");return}
+var rec={id:editId||String(Date.now()),name:name,photo:photo};
+var old=editId?people.filter(function(x){return x.id===editId})[0]:{};
+for(var k in old){if(!(k in rec))rec[k]=old[k]}
+Array.prototype.forEach.call($("fields").querySelectorAll("[data-fid]"),function(e){rec[e.getAttribute("data-fid")]=e.value.trim()});
+if(editId)people=people.map(function(x){return x.id===editId?rec:x});else people.push(rec);
+store();$("dlg").close();render()};
+$("del").onclick=function(){if(!confirm("この人を削除しますか？"))return;
+people=people.filter(function(x){return x.id!==editId});store();$("dlg").close();render()};
+$("cfg").onclick=function(){draft=clone(fields);renderSet();$("sdlg").showModal()};
+$("fadd").onclick=function(){draft.push({id:"f"+Date.now().toString(36)+Math.floor(Math.random()*100),label:"",type:"text",card:false});renderSet();
+var ins=$("frows").querySelectorAll(".lb");if(ins.length)ins[ins.length-1].focus()};
+$("scancel").onclick=function(){$("sdlg").close()};
+$("ssave").onclick=function(){
+draft.forEach(function(f){f.label=(f.label||"").trim()||"項目"});
+var keep={};draft.forEach(function(f){keep[f.id]=1});
+var gone=fields.filter(function(f){return !keep[f.id]});
+people.forEach(function(p){gone.forEach(function(f){delete p[f.id]})});
+fields=draft;store();$("sdlg").close();render()};
+function toast(m){var d=document.createElement("div");d.textContent=m;d.style.cssText="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:8px;z-index:9999;font-size:14px";document.body.appendChild(d);setTimeout(function(){d.remove()},2500)}
+load();render();
+})();
+</script>
+</body>
+</html>
