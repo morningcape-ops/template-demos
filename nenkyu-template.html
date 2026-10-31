@@ -182,7 +182,7 @@ document.addEventListener('click',ev=>{
     S.emps[sel].leaves.push({date:d,days:Number($('ln').value)});save();render();return}
   if(t.dataset.ld!=null){S.emps[sel].leaves.splice(+t.dataset.ld,1);save();render();return}
   if(t.id==='exp'){toast('JSON保存は製品版で使えます');return}
-  if(t.id==='imp'){$('file').click();return}
+  if(t.id==='imp'){toast('JSON読込は製品版で使えます');return}
   if(t.id==='csv'){toast('CSV出力は製品版で使えます');return}
   if(t.id==='roll'){toast('翌年度繰越は製品版で使えます');return}
 });

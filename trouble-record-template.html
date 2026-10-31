@@ -4,14 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>対応記録</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap">
 <style>
+  /* ★差し替え：アプリ名・カラー */
   :root {
-    --bg: #faf5f0;
+    --bg: #faf6f0;
     --card: #ffffff;
-    --text: #1a1a1a;
-    --text2: #666;
+    --card-hover: #fdfaf6;
+    --text: #1e293b;
+    --text2: #64748b;
     --accent: #b45309;
+    --accent-hover: #92400e;
     --accent-light: #fef3c7;
+    --accent-soft: rgba(180,83,9,.08);
     --border: #e5e0d8;
     --red: #dc2626;
     --red-light: #fee2e2;
@@ -22,37 +27,65 @@
     --blue: #2563eb;
     --blue-light: #e8f0fe;
     --gray: #6b7280;
-    --radius: 10px;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.03);
+    --shadow-md: 0 4px 16px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
+    --font: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a130d; --card: #261c14; --card-hover: #30241a;
+      --text: #f0e6db; --text2: #a8967e;
+      --accent: #f59e0b; --accent-hover: #d97706;
+      --accent-light: rgba(245,158,11,.15); --accent-soft: rgba(245,158,11,.12);
+      --border: #3d3025;
+      --red: #f87171; --red-light: rgba(248,113,113,.15);
+      --orange: #fb923c; --orange-light: rgba(251,146,60,.15);
+      --green: #34d399; --green-light: rgba(52,211,153,.15);
+      --blue: #60a5fa; --blue-light: rgba(96,165,250,.15);
+      --gray: #9ca3af;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.2);
+      --shadow-md: 0 4px 16px rgba(0,0,0,.25);
+      color-scheme: dark;
+    }
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", sans-serif;
+    font-family: var(--font); -webkit-font-smoothing: antialiased;
     background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh;
   }
   .header {
-    background: linear-gradient(135deg, var(--accent), #92400e);
+    position: sticky; top: 0; z-index: 50;
+    background: linear-gradient(135deg, #92400e 0%, #b45309 50%, #f59e0b 100%);
     color: #fff; padding: 16px 20px;
     display: flex; align-items: center; justify-content: space-between;
   }
-  .header h1 { font-size: 18px; font-weight: 700; }
-  .header .sub { font-size: 13px; opacity: 0.85; }
+  .header h1 { font-size: 17px; font-weight: 700; letter-spacing: .02em; }
+  .header .sub {
+    font-size: 12px; opacity: .85; font-weight: 400;
+    background: rgba(255,255,255,.15); padding: 4px 10px; border-radius: 20px;
+  }
 
   .tabs {
     display: flex; background: var(--card); border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 10;
+    position: sticky; top: 53px; z-index: 40;
+    padding: 0 8px; box-shadow: var(--shadow-sm);
   }
   .tab {
-    flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 600;
-    color: var(--text2); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;
+    flex: 1; padding: 13px 0; text-align: center;
+    font-size: 13px; font-weight: 500; letter-spacing: .01em;
+    color: var(--text2); cursor: pointer;
+    border-bottom: 2.5px solid transparent; transition: color .15s, border-color .15s;
   }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
 
   .page { display: none; padding: 16px; max-width: 640px; margin: 0 auto; }
   .page.active { display: block; }
 
   .card {
     background: var(--card); border-radius: var(--radius); padding: 16px;
-    margin-bottom: 12px; border: 1px solid var(--border);
+    margin-bottom: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);
   }
   .card h2 { font-size: 15px; margin-bottom: 12px; color: var(--text2); }
 
@@ -60,7 +93,7 @@
   .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 4px; }
   .form-group input, .form-group textarea, .form-group select {
     width: 100%; padding: 10px 12px; border: 1px solid var(--border);
-    border-radius: 8px; font-size: 15px; font-family: inherit; background: #fff;
+    border-radius: 8px; font-size: 15px; font-family: inherit; background: var(--card); color: var(--text);
   }
   .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
     outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light);
@@ -151,7 +184,7 @@
   .empty { text-align: center; padding: 32px; color: var(--text2); font-size: 14px; }
   .toast {
     position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-    background: #333; color: #fff; padding: 10px 24px; border-radius: 20px;
+    background: var(--text); color: var(--bg); padding: 10px 24px; border-radius: 20px;
     font-size: 14px; z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none;
   }
   .toast.show { opacity: 1; }
@@ -372,9 +405,9 @@ function selectCat(c) {
 
 // 記録追加
 function addRecord() {
+  if(records.length>=5){toast('デモ版は5件までです。製品版は無制限に記録できます。');return;}
   const title = document.getElementById('inTitle').value.trim();
   if (!title) { toast('件名を入力してください'); return; }
-  if (records.length >= 5) { toast('⚠ デモ版の上限（5件）です。製品版でご利用ください'); return; }
 
   const sevBtn = document.querySelector('.sev-btn.active');
   records.unshift({
@@ -563,19 +596,8 @@ function removeCategory(i) {
 
 // CSV
 function exportCSV() {
-  toast('📦 エクスポートは製品版で利用できます'); return;
-  if (!records.length) { toast('データがありません'); return; }
-  const header = '日付,分類,重大度,件名,発生状況,対応者,対応内容,原因分析,再発防止策,状態';
-  const sevL = { high:'重大', mid:'注意', low:'軽微' };
-  const stL = { open:'未対応', progress:'対応中', done:'完了' };
-  const esc = s => '"' + (s||'').replace(/"/g,'""') + '"';
-  const rows = records.map(r =>
-    [r.date, r.category, sevL[r.severity], esc(r.title), esc(r.detail), r.handler, esc(r.action), esc(r.cause), esc(r.prevention), stL[r.status]].join(',')
-  );
-  const blob = new Blob(['﻿' + header + '\n' + rows.join('\n')], {type:'text/csv'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = '対応記録.csv'; a.click();
-  toast('CSVを出力しました');
+  toast('CSV出力は製品版で使えます');return;
+
 }
 
 function clearAll() {
@@ -587,5 +609,9 @@ function clearAll() {
 
 init();
 </script>
+<div style="text-align:center;padding:24px 16px 16px;font-size:11px;color:var(--text2);opacity:.6">
+<!-- ★差し替え：フッター -->
+Powered by HTMLテンプレート
+</div>
 </body>
 </html>
