@@ -467,12 +467,41 @@ function addSection() {
 
 function editSection(i) {
   const sec = template[i];
-  const name = prompt('セクション名', sec.section);
-  if (!name) return;
-  const items = prompt('項目（カンマ区切り）', sec.items.join('、'));
-  if (!items) return;
-  template[i] = { section: name, items: items.split('、').map(s => s.trim()).filter(Boolean) };
+  const existing = document.getElementById('editSectionCard');
+  if (existing) existing.remove();
+
+  const card = document.createElement('div');
+  card.id = 'editSectionCard';
+  card.className = 'card';
+  card.style.border = '2px solid var(--accent)';
+  card.innerHTML = `
+    <h2>セクション編集</h2>
+    <div class="form-group">
+      <label>セクション名</label>
+      <input type="text" id="editSectionName" value="${sec.section}">
+    </div>
+    <div class="form-group">
+      <label>チェック項目（1行に1つ）</label>
+      <textarea id="editSectionItems" style="min-height:120px;">${sec.items.join('\n')}</textarea>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-primary" style="flex:1" onclick="saveEditSection(${i})">保存</button>
+      <button class="btn btn-outline btn-sm" onclick="this.closest('.card').remove()">キャンセル</button>
+    </div>
+  `;
+  const list = document.getElementById('templateList');
+  list.parentNode.insertBefore(card, list.nextSibling);
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function saveEditSection(i) {
+  const name = document.getElementById('editSectionName').value.trim();
+  const items = document.getElementById('editSectionItems').value.trim().split('\n').map(s => s.trim()).filter(Boolean);
+  if (!name || !items.length) { toast('セクション名と項目を入力してください'); return; }
+  template[i] = { section: name, items };
   LS.set('template', template);
+  const card = document.getElementById('editSectionCard');
+  if (card) card.remove();
   renderTemplateList();
   loadDay();
   toast('更新しました');
