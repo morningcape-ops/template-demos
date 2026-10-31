@@ -4,351 +4,440 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>タスクマネージャー</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap">
 <style>
 /* ★差し替え：アプリ名・カラー */
 :root {
-  --accent: #059669;
-  --accent-light: #d1fae5;
-  --accent-dark: #047857;
-  --bg: #f8faf8;
+  --accent: #10b981;
+  --accent-hover: #059669;
+  --accent-soft: rgba(16,185,129,.08);
+  --accent-glow: rgba(16,185,129,.15);
+  --bg: #f4f7f5;
   --card: #ffffff;
-  --ink: #1a1a1a;
-  --sub: #6b7280;
-  --line: #e5e7eb;
-  --high: #dc2626;
-  --high-bg: #fef2f2;
-  --mid: #059669;
-  --low: #6b7280;
-  --done: #9ca3af;
-  --memo-yellow: #fffde7;
-  --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --card-hover: #fafcfb;
+  --ink: #1e293b;
+  --sub: #64748b;
+  --muted: #94a3b8;
+  --line: #e2e8f0;
+  --line-soft: #f1f5f9;
+  --high: #ef4444;
+  --high-soft: rgba(239,68,68,.07);
+  --mid: #10b981;
+  --low: #94a3b8;
+  --done: #cbd5e1;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.03);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.1), 0 4px 12px rgba(0,0,0,.05);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --font: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #111916; --card: #1a2620; --ink: #e8ede9; --sub: #8a9b8f;
-    --line: #2d3d33; --accent-light: #1a3a2a; --high-bg: #2a1a1a;
-    --memo-yellow: #3a3520;
+    --bg: #0f1714; --card: #1a2421; --card-hover: #1f2e29;
+    --ink: #e2ede7; --sub: #8a9e93; --muted: #5e7368;
+    --line: #2a3b33; --line-soft: #1f2e28;
+    --accent-soft: rgba(16,185,129,.12); --accent-glow: rgba(16,185,129,.2);
+    --high-soft: rgba(239,68,68,.12);
+    --done: #3e4f47;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.2);
+    --shadow-md: 0 4px 16px rgba(0,0,0,.25);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,.4);
     color-scheme: dark;
   }
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: var(--font); background: var(--bg); color: var(--ink);
-  min-height: 100dvh; padding-bottom: 80px;
+  min-height: 100dvh; padding-bottom: 90px;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* ===== Header ===== */
 .header {
   position: sticky; top: 0; z-index: 50;
-  background: var(--accent); color: #fff; padding: 14px 16px;
+  background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
+  color: #fff; padding: 16px 20px;
   display: flex; align-items: center; justify-content: space-between;
 }
-.header h1 { font-size: 17px; font-weight: 700; }
-.header-right { display: flex; gap: 8px; align-items: center; }
-.header-btn {
-  background: rgba(255,255,255,.18); border: none; color: #fff;
-  padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer;
-  font-family: var(--font);
+.header h1 {
+  font-size: 17px; font-weight: 700; letter-spacing: .02em;
+  display: flex; align-items: center; gap: 8px;
 }
-.header-btn:hover { background: rgba(255,255,255,.28); }
+.header-date {
+  font-size: 12px; opacity: .85; font-weight: 400;
+  background: rgba(255,255,255,.15); padding: 4px 10px; border-radius: 20px;
+}
 
-/* Tabs */
+/* ===== Tabs ===== */
 .tabs {
   display: flex; background: var(--card); border-bottom: 1px solid var(--line);
-  position: sticky; top: 49px; z-index: 40;
+  position: sticky; top: 53px; z-index: 40;
+  padding: 0 8px; box-shadow: var(--shadow-sm);
 }
 .tab {
-  flex: 1; padding: 12px 0; text-align: center; font-size: 14px; font-weight: 500;
-  color: var(--sub); border: none; background: none; cursor: pointer;
-  border-bottom: 2px solid transparent; font-family: var(--font);
-  transition: color .15s, border-color .15s;
+  flex: 1; padding: 13px 0; text-align: center;
+  font-size: 13px; font-weight: 500; letter-spacing: .01em;
+  color: var(--muted); border: none; background: none; cursor: pointer;
+  border-bottom: 2.5px solid transparent; font-family: var(--font);
+  transition: all .2s ease;
 }
-.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab:hover { color: var(--sub); }
+.tab.active {
+  color: var(--accent); border-bottom-color: var(--accent);
+  font-weight: 600;
+}
 
-/* Tab panels */
-.panel { display: none; padding: 12px 16px; }
+/* ===== Panels ===== */
+.panel { display: none; padding: 16px 20px; max-width: 640px; margin: 0 auto; }
 .panel.active { display: block; }
 
-/* Cards */
-.card {
-  background: var(--card); border-radius: 12px; padding: 14px;
-  margin-bottom: 10px; border: 1px solid var(--line);
-}
-
-/* Task items */
-.task-section { margin-bottom: 16px; }
+/* ===== Task Section ===== */
+.task-section { margin-bottom: 20px; }
 .sec-header {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
-  font-size: 13px; font-weight: 600; color: var(--sub);
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  padding: 0 2px;
 }
-.sec-dot { width: 10px; height: 10px; border-radius: 50%; }
-.sec-count { font-weight: 400; font-size: 12px; }
+.sec-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.sec-title { font-size: 12px; font-weight: 600; color: var(--sub); letter-spacing: .04em; text-transform: uppercase; }
+.sec-count { font-size: 11px; color: var(--muted); font-weight: 400; }
+
+/* ===== Task Card ===== */
 .task-card {
-  background: var(--card); border-radius: 10px; padding: 12px;
-  margin-bottom: 8px; border: 1px solid var(--line);
+  background: var(--card); border-radius: var(--radius);
+  padding: 14px 16px; margin-bottom: 8px;
+  border: 1px solid var(--line);
   border-left: 3px solid var(--mid);
-  transition: box-shadow .15s;
+  box-shadow: var(--shadow-sm);
+  transition: all .2s ease;
 }
-.task-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.task-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .task-card.priority-high { border-left-color: var(--high); }
 .task-card.priority-low { border-left-color: var(--low); }
-.task-card.overdue { background: var(--high-bg); }
-.task-main {
-  display: flex; align-items: flex-start; gap: 10px;
-}
+.task-card.overdue { background: var(--high-soft); border-color: rgba(239,68,68,.15); }
+.task-main { display: flex; align-items: flex-start; gap: 12px; }
+
 .chk {
-  width: 22px; height: 22px; min-width: 22px; border-radius: 6px;
+  width: 22px; height: 22px; min-width: 22px; border-radius: 7px;
   border: 2px solid var(--accent); background: transparent;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
-  font-size: 13px; color: #fff; margin-top: 1px;
+  font-size: 12px; color: #fff; margin-top: 2px;
+  transition: all .2s ease;
+}
+.chk:hover { background: var(--accent-soft); transform: scale(1.1); }
+.chk.checked { background: var(--done); border-color: var(--done); }
+
+.task-body { flex: 1; min-width: 0; }
+.task-title { font-size: 14px; font-weight: 500; line-height: 1.6; word-break: break-word; }
+.task-title.done-text { text-decoration: line-through; color: var(--done); font-weight: 400; }
+.task-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; font-size: 11px; color: var(--sub); }
+.task-meta span { display: flex; align-items: center; gap: 3px; }
+
+.pri-badge {
+  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 6px;
+  letter-spacing: .03em;
+}
+.pri-badge.high { background: rgba(239,68,68,.1); color: var(--high); }
+.pri-badge.mid { background: var(--accent-soft); color: var(--accent); }
+.pri-badge.low { background: rgba(148,163,184,.1); color: var(--low); }
+
+.task-actions { display: flex; gap: 0; margin-left: 4px; }
+.icon-btn {
+  border: none; background: none; cursor: pointer; font-size: 15px;
+  padding: 6px; color: var(--muted); border-radius: 8px;
+  transition: all .15s ease;
+}
+.icon-btn:hover { background: var(--line-soft); color: var(--sub); }
+
+/* ===== Remarks ===== */
+.remarks-toggle {
+  border: none; background: none; cursor: pointer; font-size: 14px;
+  padding: 6px; position: relative; border-radius: 8px;
   transition: background .15s;
 }
-.chk.checked { background: var(--done); border-color: var(--done); }
-.task-body { flex: 1; min-width: 0; }
-.task-title { font-size: 14px; line-height: 1.5; word-break: break-word; }
-.task-title.done-text { text-decoration: line-through; color: var(--done); }
-.task-meta {
-  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
-  font-size: 11px; color: var(--sub);
-}
-.task-meta span { display: flex; align-items: center; gap: 2px; }
-.pri-badge {
-  font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px;
-  color: #fff;
-}
-.pri-badge.high { background: var(--high); }
-.pri-badge.mid { background: var(--mid); }
-.pri-badge.low { background: var(--low); }
-.task-actions { display: flex; gap: 2px; margin-left: 4px; }
-.icon-btn {
-  border: none; background: none; cursor: pointer; font-size: 16px;
-  padding: 4px; color: var(--sub); opacity: .6;
-}
-.icon-btn:hover { opacity: 1; }
-.empty-msg { text-align: center; padding: 32px 16px; color: var(--sub); font-size: 14px; line-height: 1.8; }
-
-/* Remarks panel */
-.remarks-toggle {
-  border: none; background: none; cursor: pointer; font-size: 15px;
-  padding: 4px; position: relative;
-}
+.remarks-toggle:hover { background: var(--line-soft); }
 .remarks-badge {
-  position: absolute; top: -2px; right: -4px;
-  background: var(--accent); color: #fff; font-size: 9px;
-  min-width: 15px; height: 15px; border-radius: 8px;
+  position: absolute; top: 0; right: 0;
+  background: var(--accent); color: #fff; font-size: 9px; font-weight: 700;
+  min-width: 16px; height: 16px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
 }
 .remarks-area {
-  background: var(--accent-light); border-radius: 0 0 10px 10px;
-  padding: 10px 12px; margin-top: 8px;
+  background: var(--accent-soft); border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  padding: 12px 14px; margin: 10px -16px -14px -16px;
+  border-top: 1px solid var(--accent-glow);
 }
-.remark-row {
-  display: flex; align-items: flex-start; gap: 6px; padding: 4px 0;
-  font-size: 13px;
-}
+.remark-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
 .remark-chk {
-  width: 16px; height: 16px; min-width: 16px; border-radius: 4px;
+  width: 16px; height: 16px; min-width: 16px; border-radius: 5px;
   border: 1.5px solid var(--accent); background: transparent;
-  cursor: pointer; font-size: 10px; color: #fff;
+  cursor: pointer; font-size: 9px; color: #fff;
   display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
 }
+.remark-chk:hover { transform: scale(1.15); }
 .remark-chk.checked { background: var(--done); border-color: var(--done); }
-.remark-text { flex: 1; min-width: 0; line-height: 1.4; }
-.remark-text.done { text-decoration: line-through; color: var(--done); }
+.remark-text { flex: 1; min-width: 0; line-height: 1.5; }
+.remark-text.done { text-decoration: line-through; color: var(--muted); }
 .remark-del {
-  border: none; background: none; cursor: pointer; color: var(--sub);
-  font-size: 14px; opacity: .5; padding: 0 2px;
+  border: none; background: none; cursor: pointer; color: var(--muted);
+  font-size: 14px; opacity: .4; padding: 2px 4px; border-radius: 4px;
+  transition: all .15s;
 }
-.remark-del:hover { opacity: 1; color: var(--high); }
-.remark-add {
-  display: flex; gap: 6px; margin-top: 8px;
-}
+.remark-del:hover { opacity: 1; color: var(--high); background: var(--high-soft); }
+.remark-add { display: flex; gap: 8px; margin-top: 10px; }
 .remark-add input {
-  flex: 1; padding: 7px 10px; border: 1px solid var(--line);
-  border-radius: 7px; font-size: 13px; font-family: var(--font);
+  flex: 1; padding: 8px 12px; border: 1px solid var(--line);
+  border-radius: 8px; font-size: 13px; font-family: var(--font);
   background: var(--card); color: var(--ink);
+  transition: border-color .2s, box-shadow .2s;
 }
+.remark-add input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
 .remark-add button {
-  padding: 7px 12px; border: none; background: var(--accent);
-  color: #fff; border-radius: 7px; font-size: 13px; cursor: pointer;
-  font-family: var(--font);
+  padding: 8px 14px; border: none; background: var(--accent);
+  color: #fff; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: var(--font); transition: background .15s;
+}
+.remark-add button:hover { background: var(--accent-hover); }
+
+.empty-msg {
+  text-align: center; padding: 48px 20px; color: var(--muted);
+  font-size: 14px; line-height: 1.8;
 }
 
-/* Memo panel */
-.memo-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-.memo-card {
-  width: calc(50% - 4px); min-height: 80px; border-radius: 8px;
-  padding: 10px; position: relative; font-size: 13px;
-  border: 1px solid rgba(0,0,0,.06);
-}
-@media (max-width: 500px) { .memo-card { width: 100%; } }
-.memo-card .mdel {
-  position: absolute; top: 4px; right: 6px;
-  border: none; background: none; cursor: pointer;
-  font-size: 16px; opacity: .3; color: var(--ink);
-}
-.memo-card .mdel:hover { opacity: .8; }
-.memo-card .mchk {
-  width: 16px; height: 16px; min-width: 16px; border-radius: 4px;
-  border: 1.5px solid #999; background: transparent; cursor: pointer;
-  font-size: 10px; color: #fff;
-  display: flex; align-items: center; justify-content: center;
-}
-.memo-card .mchk.checked { background: var(--done); border-color: var(--done); }
-.memo-top { display: flex; align-items: flex-start; gap: 6px; }
-.memo-text {
-  flex: 1; min-width: 0; line-height: 1.5; word-break: break-word; cursor: pointer;
-}
-.memo-text.done { text-decoration: line-through; color: var(--done); }
-.memo-date { font-size: 10px; color: var(--sub); margin-top: 6px; }
-.memo-input-area { margin-top: 12px; }
-.memo-input-area textarea {
-  width: 100%; padding: 10px; border: 1px solid var(--line);
-  border-radius: 8px; font-size: 14px; font-family: var(--font);
-  resize: vertical; min-height: 60px; background: var(--card); color: var(--ink);
-}
-.color-presets { display: flex; gap: 6px; margin: 8px 0; flex-wrap: wrap; }
-.color-preset {
-  width: 22px; height: 22px; border-radius: 5px; border: 2px solid var(--line);
-  cursor: pointer; padding: 0;
-}
-.color-preset.selected { border-color: var(--accent); }
-.memo-input-area .btn-row { display: flex; gap: 8px; margin-top: 8px; }
-
-/* Work log panel */
-.wl-item {
-  background: var(--card); border-radius: 10px; padding: 12px;
-  margin-bottom: 8px; border: 1px solid var(--line);
-}
-.wl-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.wl-datetime { font-size: 12px; color: var(--accent); font-weight: 600; }
-.wl-actions { display: flex; gap: 4px; }
-.wl-btn {
-  border: none; background: none; cursor: pointer; font-size: 14px;
-  color: var(--sub); opacity: .5; padding: 2px 4px;
-}
-.wl-btn:hover { opacity: 1; }
-.wl-content { font-size: 14px; line-height: 1.5; }
-.wl-notes { font-size: 12px; color: var(--sub); margin-top: 4px; }
-.wl-form {
-  display: none; background: var(--card); border-radius: 12px;
-  padding: 16px; margin-bottom: 12px; border: 1px solid var(--line);
-}
-.wl-form.open { display: block; }
-.wl-form .field { margin-bottom: 10px; }
-.wl-form label { display: block; font-size: 12px; font-weight: 600; color: var(--sub); margin-bottom: 4px; }
-.wl-form input, .wl-form textarea {
-  width: 100%; padding: 10px; border: 1px solid var(--line);
-  border-radius: 8px; font-size: 14px; font-family: var(--font);
-  background: var(--card); color: var(--ink);
-}
-.wl-form textarea { resize: vertical; min-height: 60px; }
-
-/* Sort toggle */
+/* ===== Sort Toggle ===== */
 .sort-toggle {
-  display: flex; gap: 6px; align-items: center; margin-bottom: 12px;
-  font-size: 12px; color: var(--sub);
+  display: flex; gap: 4px; align-items: center; margin-bottom: 16px;
+  font-size: 12px; color: var(--muted);
+  background: var(--card); border-radius: var(--radius-sm);
+  padding: 4px; border: 1px solid var(--line);
+  width: fit-content;
 }
 .sort-btn {
-  padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px;
-  background: transparent; font-size: 12px; cursor: pointer;
-  font-family: var(--font); color: var(--sub);
+  padding: 6px 14px; border: none; border-radius: 8px;
+  background: transparent; font-size: 12px; font-weight: 500;
+  cursor: pointer; font-family: var(--font); color: var(--sub);
+  transition: all .2s ease;
 }
-.sort-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.sort-btn:hover { background: var(--line-soft); }
+.sort-btn.active { background: var(--accent); color: #fff; box-shadow: var(--shadow-sm); }
 
-/* FAB */
+/* ===== Memo Panel ===== */
+.memo-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+.memo-card {
+  width: calc(50% - 5px); min-height: 90px; border-radius: var(--radius-sm);
+  padding: 12px; position: relative; font-size: 13px;
+  box-shadow: var(--shadow-sm); border: none;
+  transition: all .2s ease;
+}
+.memo-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+@media (max-width: 500px) { .memo-card { width: 100%; } }
+.memo-card .mdel {
+  position: absolute; top: 6px; right: 8px;
+  border: none; background: rgba(0,0,0,.06); cursor: pointer;
+  font-size: 14px; opacity: .4; color: var(--ink);
+  width: 22px; height: 22px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.memo-card .mdel:hover { opacity: .8; background: rgba(239,68,68,.12); color: var(--high); }
+.memo-card .mchk {
+  width: 16px; height: 16px; min-width: 16px; border-radius: 5px;
+  border: 1.5px solid rgba(0,0,0,.2); background: transparent; cursor: pointer;
+  font-size: 9px; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.memo-card .mchk.checked { background: var(--done); border-color: var(--done); }
+.memo-top { display: flex; align-items: flex-start; gap: 8px; }
+.memo-text {
+  flex: 1; min-width: 0; line-height: 1.6; word-break: break-word;
+  cursor: pointer; font-size: 13px;
+}
+.memo-text.done { text-decoration: line-through; color: var(--muted); }
+.memo-date { font-size: 10px; color: rgba(0,0,0,.3); margin-top: 8px; }
+
+.memo-input-area {
+  margin-top: 16px; background: var(--card); border-radius: var(--radius);
+  padding: 16px; border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+}
+.memo-input-area textarea {
+  width: 100%; padding: 12px 14px; border: 1px solid var(--line);
+  border-radius: var(--radius-sm); font-size: 14px; font-family: var(--font);
+  resize: vertical; min-height: 70px; background: var(--bg); color: var(--ink);
+  transition: border-color .2s, box-shadow .2s; line-height: 1.6;
+}
+.memo-input-area textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.color-presets { display: flex; gap: 6px; margin: 10px 0; flex-wrap: wrap; }
+.color-preset {
+  width: 24px; height: 24px; border-radius: 7px; border: 2.5px solid transparent;
+  cursor: pointer; padding: 0; transition: all .15s; box-shadow: inset 0 -1px 2px rgba(0,0,0,.08);
+}
+.color-preset:hover { transform: scale(1.15); }
+.color-preset.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+.memo-input-area .btn-row { display: flex; gap: 8px; margin-top: 10px; }
+
+/* ===== Work Log ===== */
+.wl-item {
+  background: var(--card); border-radius: var(--radius-sm); padding: 14px 16px;
+  margin-bottom: 8px; border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm); transition: all .2s;
+}
+.wl-item:hover { box-shadow: var(--shadow-md); }
+.wl-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.wl-datetime {
+  font-size: 12px; color: var(--accent); font-weight: 600;
+  background: var(--accent-soft); padding: 3px 10px; border-radius: 6px;
+}
+.wl-actions { display: flex; gap: 2px; }
+.wl-btn {
+  border: none; background: none; cursor: pointer; font-size: 14px;
+  color: var(--muted); padding: 4px 6px; border-radius: 6px;
+  transition: all .15s;
+}
+.wl-btn:hover { background: var(--line-soft); color: var(--sub); }
+.wl-content { font-size: 14px; line-height: 1.6; font-weight: 500; }
+.wl-notes { font-size: 12px; color: var(--sub); margin-top: 4px; line-height: 1.5; }
+
+.wl-form {
+  display: none; background: var(--card); border-radius: var(--radius);
+  padding: 20px; margin-bottom: 14px;
+  border: 1px solid var(--line); box-shadow: var(--shadow-md);
+}
+.wl-form.open { display: block; }
+
+/* ===== FAB ===== */
 .fab {
-  position: fixed; bottom: 24px; right: 20px;
-  width: 56px; height: 56px; border-radius: 50%;
-  background: var(--accent); color: #fff; border: none;
-  font-size: 28px; cursor: pointer; z-index: 100;
-  box-shadow: 0 4px 12px rgba(5,150,105,.3);
+  position: fixed; bottom: 28px; right: 24px;
+  width: 56px; height: 56px; border-radius: 16px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff; border: none;
+  font-size: 26px; font-weight: 300; cursor: pointer; z-index: 100;
+  box-shadow: 0 6px 20px rgba(16,185,129,.35), 0 2px 6px rgba(0,0,0,.1);
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font);
+  transition: all .2s ease;
 }
-.fab:hover { background: var(--accent-dark); }
+.fab:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 8px 28px rgba(16,185,129,.4); }
+.fab:active { transform: scale(.95); }
 
-/* Overlay / Form sheet */
+/* ===== Overlay / Sheet ===== */
 .overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  position: fixed; inset: 0;
+  background: rgba(15,23,20,.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
   z-index: 200; display: flex; align-items: flex-end; justify-content: center;
+  animation: overlayIn .25s ease;
 }
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
 .sheet {
-  background: var(--card); border-radius: 20px 20px 0 0;
-  padding: 24px 20px 32px; width: 100%; max-width: 520px;
+  background: var(--card); border-radius: 24px 24px 0 0;
+  padding: 28px 24px 36px; width: 100%; max-width: 520px;
   max-height: 90vh; overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: sheetUp .3s cubic-bezier(.16,1,.3,1);
 }
-.sheet h2 { font-size: 18px; margin-bottom: 16px; }
-.field { margin-bottom: 12px; }
-.field label { display: block; font-size: 12px; font-weight: 600; color: var(--sub); margin-bottom: 4px; }
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.sheet h2 { font-size: 18px; font-weight: 700; margin-bottom: 20px; letter-spacing: -.01em; }
+
+/* ===== Form fields ===== */
+.field { margin-bottom: 14px; }
+.field label {
+  display: block; font-size: 11px; font-weight: 600; color: var(--sub);
+  margin-bottom: 6px; letter-spacing: .05em; text-transform: uppercase;
+}
 .field input, .field select, .field textarea {
-  width: 100%; padding: 11px 12px; font-size: 15px; color: var(--ink);
-  border: 1px solid var(--line); border-radius: 9px; background: var(--card);
-  outline: none; font-family: var(--font);
+  width: 100%; padding: 12px 14px; font-size: 15px; color: var(--ink);
+  border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--bg); outline: none; font-family: var(--font);
+  transition: border-color .2s, box-shadow .2s;
 }
-.field select { appearance: auto; }
-.twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.form-actions {
-  display: flex; gap: 10px; margin-top: 18px;
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
 }
+.field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+.field select { appearance: auto; cursor: pointer; }
+.twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-actions { display: flex; gap: 10px; margin-top: 22px; }
+
 .btn-save {
-  flex: 1; padding: 13px; border: none; background: var(--accent);
-  color: #fff; border-radius: 10px; font-size: 15px; font-weight: 600;
-  cursor: pointer; font-family: var(--font);
+  flex: 1; padding: 14px; border: none;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff; border-radius: var(--radius-sm);
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  font-family: var(--font); transition: all .2s;
+  box-shadow: 0 2px 8px rgba(16,185,129,.25);
 }
+.btn-save:hover { box-shadow: 0 4px 16px rgba(16,185,129,.35); transform: translateY(-1px); }
+.btn-save:active { transform: scale(.98); }
+
 .btn-cancel {
-  padding: 13px 20px; border: 1px solid var(--line); background: transparent;
-  border-radius: 10px; color: var(--sub); font-size: 14px; cursor: pointer;
-  font-family: var(--font);
+  padding: 14px 22px; border: 1.5px solid var(--line); background: transparent;
+  border-radius: var(--radius-sm); color: var(--sub); font-size: 14px;
+  cursor: pointer; font-family: var(--font); transition: all .15s;
 }
+.btn-cancel:hover { background: var(--line-soft); border-color: var(--sub); }
 
-/* Complete dialog */
+/* ===== Complete dialog ===== */
 .complete-sheet { max-width: 480px; text-align: center; }
-.complete-sheet .cmp-btns { display: flex; flex-direction: column; gap: 9px; }
+.cmp-btns { display: flex; flex-direction: column; gap: 10px; }
 .cmp-btn {
-  padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 600;
-  cursor: pointer; font-family: var(--font);
+  padding: 14px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 600;
+  cursor: pointer; font-family: var(--font); transition: all .15s;
 }
 
-/* Settings panel */
-.setting-section { margin-bottom: 20px; }
-.setting-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+/* ===== Settings ===== */
 .data-stat {
-  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px;
 }
 .stat-card {
-  background: var(--accent-light); border-radius: 10px; padding: 12px; text-align: center;
+  background: var(--accent-soft); border-radius: var(--radius-sm);
+  padding: 16px 12px; text-align: center;
+  border: 1px solid var(--accent-glow);
 }
-.stat-num { font-size: 24px; font-weight: 700; color: var(--accent); }
-.stat-label { font-size: 11px; color: var(--sub); margin-top: 2px; }
+.stat-num { font-size: 28px; font-weight: 700; color: var(--accent); }
+.stat-label { font-size: 11px; color: var(--sub); margin-top: 4px; font-weight: 500; }
+.setting-section { margin-bottom: 24px; }
+.setting-section h3 {
+  font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 10px;
+  letter-spacing: .05em; text-transform: uppercase;
+}
 .setting-btn {
-  display: block; width: 100%; padding: 12px; border: 1px solid var(--line);
-  border-radius: 10px; background: var(--card); font-size: 14px;
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 14px 16px; border: 1px solid var(--line);
+  border-radius: var(--radius-sm); background: var(--card); font-size: 14px;
   cursor: pointer; font-family: var(--font); color: var(--ink);
   text-align: left; margin-bottom: 8px;
+  box-shadow: var(--shadow-sm); transition: all .15s;
 }
-.setting-btn:hover { background: var(--accent-light); }
-.setting-btn.danger { color: var(--high); border-color: #fecaca; }
-.setting-btn.danger:hover { background: var(--high-bg); }
+.setting-btn:hover { background: var(--card-hover); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.setting-btn.danger { color: var(--high); border-color: rgba(239,68,68,.2); }
+.setting-btn.danger:hover { background: var(--high-soft); }
 
-/* Toast */
+/* ===== Toast ===== */
 .toast {
-  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-  background: #333; color: #fff; padding: 10px 20px; border-radius: 10px;
-  font-size: 14px; z-index: 999; animation: fadeInOut 2.8s ease;
+  position: fixed; bottom: 96px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: var(--bg); padding: 12px 24px; border-radius: 12px;
+  font-size: 14px; font-weight: 500; z-index: 999;
+  box-shadow: var(--shadow-lg); animation: toastAnim 2.8s ease;
 }
-@keyframes fadeInOut { 0%{opacity:0;transform:translateX(-50%) translateY(10px)} 10%{opacity:1;transform:translateX(-50%) translateY(0)} 85%{opacity:1} 100%{opacity:0} }
+@keyframes toastAnim {
+  0% { opacity:0; transform: translateX(-50%) translateY(12px); }
+  8% { opacity:1; transform: translateX(-50%) translateY(0); }
+  82% { opacity:1; }
+  100% { opacity:0; transform: translateX(-50%) translateY(-4px); }
+}
 </style>
 </head>
 <body>
 
-<!-- Header -->
 <div class="header">
   <h1>📋 タスクマネージャー</h1><!-- ★差し替え：アプリ名 -->
-  <div class="header-right">
-    <span id="dateLabel" style="font-size:12px;opacity:.8"></span>
-  </div>
+  <span class="header-date" id="dateLabel"></span>
 </div>
 
-<!-- Tabs -->
 <div class="tabs">
   <button class="tab active" data-tab="tasks" onclick="switchTab('tasks')">タスク</button>
   <button class="tab" data-tab="log" onclick="switchTab('log')">業務記録</button>
@@ -356,28 +445,25 @@ body {
   <button class="tab" data-tab="settings" onclick="switchTab('settings')">設定</button>
 </div>
 
-<!-- Task panel -->
 <div id="panelTasks" class="panel active">
   <div class="sort-toggle">
-    並び順：
     <button class="sort-btn active" id="sortCreated" onclick="setSort('created')">作成順</button>
     <button class="sort-btn" id="sortUpdated" onclick="setSort('updated')">更新順</button>
   </div>
   <div id="taskWrap"></div>
 </div>
 
-<!-- Work log panel -->
 <div id="panelLog" class="panel">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <h2 style="font-size:16px;">業務記録</h2>
-    <button class="header-btn" style="background:var(--accent);font-size:13px;" onclick="showWlForm()">＋ 記録</button>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <h2 style="font-size:16px;font-weight:700;">業務記録</h2>
+    <button class="btn-save" style="flex:none;padding:8px 16px;font-size:13px;" onclick="showWlForm()">＋ 記録</button>
   </div>
   <div id="wlForm" class="wl-form">
     <div class="twocol">
       <div class="field"><label>日付</label><input type="date" id="wf_date"></div>
       <div class="field"><label>時刻</label><input type="time" id="wf_time"></div>
     </div>
-    <div class="field"><label>作業内容</label><textarea id="wf_content" placeholder="作業内容を入力…"></textarea></div>
+    <div class="field"><label>作業内容</label><textarea id="wf_content" placeholder="作業内容を入力…" style="min-height:70px;resize:vertical;"></textarea></div>
     <div class="field"><label>備考</label><input id="wf_notes" placeholder="補足情報（任意）"></div>
     <div class="form-actions">
       <button class="btn-cancel" onclick="hideWlForm()">キャンセル</button>
@@ -387,12 +473,11 @@ body {
   <div id="wlList"></div>
 </div>
 
-<!-- Memo panel -->
 <div id="panelMemo" class="panel">
-  <h2 style="font-size:16px;margin-bottom:12px;">📌 メモ</h2>
+  <h2 style="font-size:16px;font-weight:700;margin-bottom:14px;">📌 メモ</h2>
   <div id="memoGrid" class="memo-grid"></div>
   <div class="memo-input-area">
-    <textarea id="memoInput" placeholder="メモを入力…（付箋のように使えます）"></textarea>
+    <textarea id="memoInput" placeholder="メモを入力…&#10;付箋のように使えます"></textarea>
     <div class="color-presets" id="colorPresets"></div>
     <div class="btn-row">
       <button class="btn-save" style="flex:1" onclick="addMemo()">メモを追加</button>
@@ -401,9 +486,8 @@ body {
   </div>
 </div>
 
-<!-- Settings panel -->
 <div id="panelSettings" class="panel">
-  <h2 style="font-size:16px;margin-bottom:16px;">⚙️ 設定</h2>
+  <h2 style="font-size:16px;font-weight:700;margin-bottom:20px;">設定</h2>
   <div class="setting-section">
     <h3>データ件数</h3>
     <div class="data-stat">
@@ -426,45 +510,38 @@ body {
     <h3>データ管理</h3>
     <button class="setting-btn danger" onclick="clearAll()">🗑️ 全データを削除</button>
   </div>
-  <div style="text-align:center;margin-top:24px;font-size:11px;color:var(--sub);">
-    タスクマネージャー v1.0<br><!-- ★差し替え：バージョン表記 -->
-    データはブラウザのローカルストレージに保存されます
+  <div style="text-align:center;margin-top:32px;font-size:11px;color:var(--muted);line-height:1.7;">
+    タスクマネージャー v1.0<!-- ★差し替え --><br>
+    データはブラウザに保存されます
   </div>
 </div>
 
-<!-- FAB -->
 <button class="fab" id="fab" onclick="fabAction()">＋</button>
 
 <script>
-/* ===== ★差し替え：初期テンプレート ===== */
 const APP_PREFIX = 'tm_';
 const PRI_LABEL = { high: '高', mid: '中', low: '低' };
-const MEMO_COLORS = ['#fffde7','#e8f5e9','#e3f2fd','#fce4ec','#f3e5f5','#fff3e0','#e0f7fa','#f5f5f5'];
+const MEMO_COLORS = ['#fffde7','#e8f5e9','#e3f2fd','#fce4ec','#f3e5f5','#fff3e0','#e0f7fa','#f1f0eb'];
 const SEED = [
   { id: 1, content: '週次レポート作成', requester: '', assignee: '', due: '', priority: 'high', done: false, remarks: [] },
   { id: 2, content: '備品発注（コピー用紙・トナー）', requester: '', assignee: '', due: '', priority: 'mid', done: false, remarks: [] },
   { id: 3, content: '会議室予約の確認', requester: '', assignee: '', due: '', priority: 'low', done: false, remarks: [] },
 ];
 
-/* ===== Storage ===== */
 const LS = {
   get(k) { try { const v = localStorage.getItem(APP_PREFIX + k); return v ? JSON.parse(v) : null; } catch { return null; } },
   set(k, v) { try { localStorage.setItem(APP_PREFIX + k, JSON.stringify(v)); } catch {} },
   del(k) { try { localStorage.removeItem(APP_PREFIX + k); } catch {} }
 };
 
-/* ===== State ===== */
 let items = LS.get('items') || SEED.map(i => ({ ...i, id: Date.now() + Math.random(), createdAt: nowFull(), remarks: [] }));
 let workLogs = LS.get('worklogs') || [];
 let memos = LS.get('memos') || [];
 let sortMode = LS.get('sort') || 'created';
-let editId = null;
-let editWlId = null;
-let editingMemoId = null;
+let editId = null, editWlId = null, editingMemoId = null;
 let memoColor = MEMO_COLORS[0];
 let openRemarks = new Set();
 
-/* ===== Utils ===== */
 function todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function nowTimeStr() { const d = new Date(); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
 function nowFull() { return todayStr() + ' ' + nowTimeStr() + ':' + String(new Date().getSeconds()).padStart(2,'0'); }
@@ -472,41 +549,30 @@ function daysUntil(due) { if (!due) return null; return Math.round((new Date(due
 function fmtDue(due) {
   if (!due) return '期限なし';
   const n = daysUntil(due), p = due.split('-'), base = parseInt(p[1]) + '/' + parseInt(p[2]);
-  if (n === 0) return base + '（今日）';
-  if (n === 1) return base + '（明日）';
-  if (n < 0) return base + '（' + Math.abs(n) + '日超過）';
-  return base + '（あと' + n + '日）';
+  if (n === 0) return base + '（今日）'; if (n === 1) return base + '（明日）';
+  if (n < 0) return base + '（' + Math.abs(n) + '日超過）'; return base + '（あと' + n + '日）';
 }
 function fmtDate(s) { if (!s) return ''; const p = s.split('-'); return parseInt(p[1]) + '/' + parseInt(p[2]); }
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(msg) {
   document.querySelectorAll('.toast').forEach(e => e.remove());
-  const el = document.createElement('div');
-  el.className = 'toast'; el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => { if (el.parentNode) el.remove(); }, 2800);
+  const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el); setTimeout(() => { if (el.parentNode) el.remove(); }, 2800);
 }
 function save() { LS.set('items', items); LS.set('worklogs', workLogs); LS.set('memos', memos); LS.set('sort', sortMode); }
 
-/* ===== Tab switching ===== */
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  const panelMap = { tasks: 'panelTasks', log: 'panelLog', memo: 'panelMemo', settings: 'panelSettings' };
-  const panel = document.getElementById(panelMap[tab]);
-  if (panel) panel.classList.add('active');
+  const map = { tasks: 'panelTasks', log: 'panelLog', memo: 'panelMemo', settings: 'panelSettings' };
+  document.getElementById(map[tab])?.classList.add('active');
   if (tab === 'settings') updateStats();
 }
-
-/* ===== FAB ===== */
 function fabAction() {
-  const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'tasks';
-  if (activeTab === 'tasks') openForm();
-  else if (activeTab === 'log') showWlForm();
-  else if (activeTab === 'memo') { document.getElementById('memoInput')?.focus(); }
+  const t = document.querySelector('.tab.active')?.dataset.tab || 'tasks';
+  if (t === 'tasks') openForm(); else if (t === 'log') showWlForm();
+  else if (t === 'memo') document.getElementById('memoInput')?.focus();
 }
-
-/* ===== SORT ===== */
 function setSort(mode) {
   sortMode = mode; save();
   document.getElementById('sortCreated').classList.toggle('active', mode === 'created');
@@ -514,7 +580,6 @@ function setSort(mode) {
   renderTasks();
 }
 
-/* ===== TASK RENDER ===== */
 function tsCreated(it) { const s = it.createdAt || it.created; if (s) { const t = Date.parse(s.replace(' ','T')); if (!isNaN(t)) return t; } return typeof it.id === 'number' ? it.id : 0; }
 function tsUpdated(it) { let best = tsCreated(it); [it.updatedAt, it.doneAt].forEach(s => { if (s) { const t = Date.parse(String(s).replace(' ','T')); if (!isNaN(t) && t > best) best = t; } }); return best; }
 
@@ -525,12 +590,7 @@ function renderTasks() {
   const mid = active.filter(i => (i.priority||'mid') === 'mid').sort(sorter);
   const low = active.filter(i => (i.priority||'mid') === 'low').sort(sorter);
   const wrap = document.getElementById('taskWrap');
-
-  if (!active.length && !done.length) {
-    wrap.innerHTML = '<div class="empty-msg">まだタスクはありません。<br>右下の「＋」から追加してください。</div>';
-    return;
-  }
-
+  if (!active.length && !done.length) { wrap.innerHTML = '<div class="empty-msg">まだタスクはありません。<br>右下の「＋」から追加してください。</div>'; return; }
   let html = '';
   html += taskSection('優先度：高', 'var(--high)', high);
   html += taskSection('優先度：中', 'var(--mid)', mid);
@@ -538,148 +598,109 @@ function renderTasks() {
   if (done.length) html += taskSection('完了', 'var(--done)', done.sort(sorter), true);
   wrap.innerHTML = html;
 }
-
 function taskSection(title, color, list, muted) {
   if (!list.length) return '';
-  let h = '<div class="task-section"><div class="sec-header">';
-  h += '<span class="sec-dot" style="background:' + color + '"></span>';
-  h += '<span>' + title + '</span>';
-  h += '<span class="sec-count">（' + list.length + '）</span>';
-  h += '</div>';
+  let h = '<div class="task-section"><div class="sec-header"><span class="sec-dot" style="background:'+color+'"></span><span class="sec-title">'+title+'</span><span class="sec-count">'+list.length+'</span></div>';
   list.forEach(it => {
-    const pri = it.priority || 'mid';
-    const ov = !it.done && it.due && daysUntil(it.due) <= 0;
-    h += '<div class="task-card priority-' + pri + (ov ? ' overdue' : '') + '">';
-    h += '<div class="task-main">';
-    h += '<button class="chk' + (it.done ? ' checked' : '') + '" onclick="toggleTask(\'' + it.id + '\')">' + (it.done ? '✓' : '') + '</button>';
-    h += '<div class="task-body">';
-    h += '<div class="task-title' + (it.done ? ' done-text' : '') + '">' + esc(it.content) + '</div>';
-    h += '<div class="task-meta">';
-    if (!muted) h += '<span class="pri-badge ' + pri + '">' + PRI_LABEL[pri] + '</span>';
-    if (it.due) h += '<span style="color:' + (ov ? 'var(--high)' : 'var(--sub)') + ';font-weight:' + (ov ? '700' : '400') + '">🕒 ' + fmtDue(it.due) + '</span>';
-    if (it.requester) h += '<span>依頼：' + esc(it.requester) + '</span>';
-    if (it.assignee) h += '<span>担当：' + esc(it.assignee) + '</span>';
-    h += '</div></div>';
-    h += '<div class="task-actions">';
-    const rmk = (it.remarks || []).length;
-    h += '<button class="remarks-toggle" onclick="toggleRemarks(\'' + it.id + '\')">📝' + (rmk ? '<span class="remarks-badge">' + rmk + '</span>' : '') + '</button>';
-    h += '<button class="icon-btn" onclick="openEdit(\'' + it.id + '\')">✎</button>';
-    h += '<button class="icon-btn" onclick="removeTask(\'' + it.id + '\')">×</button>';
+    const pri = it.priority || 'mid', ov = !it.done && it.due && daysUntil(it.due) <= 0;
+    h += '<div class="task-card priority-'+pri+(ov?' overdue':'')+'"><div class="task-main">';
+    h += '<button class="chk'+(it.done?' checked':'')+'" onclick="toggleTask(\''+it.id+'\')">'+(it.done?'✓':'')+'</button>';
+    h += '<div class="task-body"><div class="task-title'+(it.done?' done-text':'')+'">'+esc(it.content)+'</div><div class="task-meta">';
+    if (!muted) h += '<span class="pri-badge '+pri+'">'+PRI_LABEL[pri]+'</span>';
+    if (it.due) h += '<span style="color:'+(ov?'var(--high)':'var(--sub)')+';font-weight:'+(ov?'600':'400')+'">🕒 '+fmtDue(it.due)+'</span>';
+    if (it.requester) h += '<span>依頼：'+esc(it.requester)+'</span>';
+    if (it.assignee) h += '<span>担当：'+esc(it.assignee)+'</span>';
+    h += '</div></div><div class="task-actions">';
+    const rmk = (it.remarks||[]).length;
+    h += '<button class="remarks-toggle" onclick="toggleRemarks(\''+it.id+'\')">📝'+(rmk?'<span class="remarks-badge">'+rmk+'</span>':'')+'</button>';
+    h += '<button class="icon-btn" onclick="openEdit(\''+it.id+'\')">✎</button>';
+    h += '<button class="icon-btn" onclick="removeTask(\''+it.id+'\')">×</button>';
     h += '</div></div>';
     if (openRemarks.has(it.id)) h += renderRemarks(it);
     h += '</div>';
   });
-  h += '</div>';
-  return h;
+  return h + '</div>';
 }
-
 function renderRemarks(it) {
   const rem = it.remarks || [];
   let h = '<div class="remarks-area">';
-  if (!rem.length) h += '<div style="font-size:12px;color:var(--sub);padding:2px 0 6px;">サブタスクを追加できます</div>';
+  if (!rem.length) h += '<div style="font-size:12px;color:var(--muted);padding:2px 0 6px;">サブタスクを追加できます</div>';
   rem.forEach((r, idx) => {
-    h += '<div class="remark-row">';
-    h += '<button class="remark-chk' + (r.done ? ' checked' : '') + '" onclick="toggleRemark(\'' + it.id + '\',' + idx + ')">' + (r.done ? '✓' : '') + '</button>';
-    h += '<span class="remark-text' + (r.done ? ' done' : '') + '">' + esc(r.text) + '</span>';
-    h += '<button class="remark-del" onclick="deleteRemark(\'' + it.id + '\',' + idx + ')">×</button>';
-    h += '</div>';
+    h += '<div class="remark-row"><button class="remark-chk'+(r.done?' checked':'')+'" onclick="toggleRemark(\''+it.id+'\','+idx+')">'+(r.done?'✓':'')+'</button>';
+    h += '<span class="remark-text'+(r.done?' done':'')+'">'+esc(r.text)+'</span>';
+    h += '<button class="remark-del" onclick="deleteRemark(\''+it.id+'\','+idx+')">×</button></div>';
   });
-  h += '<div class="remark-add">';
-  h += '<input type="text" id="ri-' + it.id + '" placeholder="サブタスクを追加…" onkeydown="if(event.key===\'Enter\')addRemark(\'' + it.id + '\')">';
-  h += '<button onclick="addRemark(\'' + it.id + '\')">追加</button>';
-  h += '</div></div>';
+  h += '<div class="remark-add"><input type="text" id="ri-'+it.id+'" placeholder="サブタスクを追加…" onkeydown="if(event.key===\'Enter\')addRemark(\''+it.id+'\')"><button onclick="addRemark(\''+it.id+'\')">追加</button></div></div>';
   return h;
 }
 
-/* ===== TASK ACTIONS ===== */
 function toggleTask(id) {
-  const it = items.find(i => String(i.id) === String(id));
-  if (!it) return;
-  if (it.done) { items = items.map(i => String(i.id) === String(id) ? { ...i, done: false, doneAt: undefined } : i); save(); renderTasks(); return; }
+  const it = items.find(i => String(i.id) === String(id)); if (!it) return;
+  if (it.done) { items = items.map(i => String(i.id)===String(id)?{...i,done:false,doneAt:undefined}:i); save(); renderTasks(); return; }
   showCompleteDialog(it);
 }
-
 function showCompleteDialog(it) {
   const ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'completeOverlay';
   ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-  ov.innerHTML = '<div class="sheet complete-sheet">' +
-    '<h2 style="margin-bottom:12px;">✅ 完了にしますか？</h2>' +
-    '<div style="font-size:14px;line-height:1.7;margin-bottom:6px;text-align:left;padding:0 8px;">' + esc(it.content) + '</div>' +
-    '<div style="font-size:13px;color:var(--sub);margin-bottom:18px;">業務記録として残しますか？</div>' +
-    '<div class="cmp-btns">' +
-    '<button class="cmp-btn" style="background:var(--accent);color:#fff;border:none;" onclick="completeWithLog(\'' + it.id + '\')">📋 業務記録に残して完了</button>' +
-    '<button class="cmp-btn" style="background:transparent;color:var(--sub);border:1px solid var(--line);" onclick="completeOnly(\'' + it.id + '\')">完了のみ</button>' +
-    '<button class="cmp-btn" style="background:transparent;color:var(--sub);border:none;font-size:13px;" onclick="this.closest(\'.overlay\').remove()">やめる</button>' +
+  ov.innerHTML = '<div class="sheet complete-sheet"><h2>✅ 完了にしますか？</h2>'+
+    '<div style="font-size:14px;line-height:1.7;margin-bottom:8px;text-align:left;padding:0 8px;">'+esc(it.content)+'</div>'+
+    '<div style="font-size:13px;color:var(--sub);margin-bottom:20px;">業務記録として残しますか？</div>'+
+    '<div class="cmp-btns">'+
+    '<button class="cmp-btn" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;box-shadow:0 2px 8px rgba(16,185,129,.25);" onclick="completeWithLog(\''+it.id+'\')">📋 業務記録に残して完了</button>'+
+    '<button class="cmp-btn" style="background:transparent;color:var(--sub);border:1.5px solid var(--line);" onclick="completeOnly(\''+it.id+'\')">完了のみ</button>'+
+    '<button class="cmp-btn" style="background:transparent;color:var(--muted);border:none;font-size:13px;" onclick="this.closest(\'.overlay\').remove()">やめる</button>'+
     '</div></div>';
   document.body.appendChild(ov);
 }
-
 function completeWithLog(id) {
-  const it = items.find(i => String(i.id) === String(id));
-  if (!it) return;
-  const dup = workLogs.find(w => w.srcId && String(w.srcId) === String(id));
+  const it = items.find(i => String(i.id)===String(id)); if (!it) return;
+  const dup = workLogs.find(w => w.srcId && String(w.srcId)===String(id));
   if (!dup) {
-    const notes = [it.requester ? '依頼：' + it.requester : '', it.due ? '期限：' + fmtDue(it.due) : ''].filter(Boolean).join('／');
-    workLogs.push({ id: Date.now(), srcId: it.id, date: todayStr(), time: nowTimeStr(), content: it.content + (it.assignee ? ' （' + it.assignee + '）' : ''), notes, createdAt: nowFull() });
+    const notes = [it.requester?'依頼：'+it.requester:'', it.due?'期限：'+fmtDue(it.due):''].filter(Boolean).join('／');
+    workLogs.push({id:Date.now(),srcId:it.id,date:todayStr(),time:nowTimeStr(),content:it.content+(it.assignee?' （'+it.assignee+'）':''),notes,createdAt:nowFull()});
   }
-  items = items.map(i => String(i.id) === String(id) ? { ...i, done: true, doneAt: nowFull() } : i);
+  items = items.map(i => String(i.id)===String(id)?{...i,done:true,doneAt:nowFull()}:i);
   save(); renderTasks(); renderWorkLogs();
   document.getElementById('completeOverlay')?.remove();
   toast(dup ? '📋 既に記録済み' : '📋 業務記録に保存しました');
 }
-
 function completeOnly(id) {
-  items = items.map(i => String(i.id) === String(id) ? { ...i, done: true, doneAt: nowFull() } : i);
-  save(); renderTasks();
-  document.getElementById('completeOverlay')?.remove();
+  items = items.map(i => String(i.id)===String(id)?{...i,done:true,doneAt:nowFull()}:i);
+  save(); renderTasks(); document.getElementById('completeOverlay')?.remove();
 }
-
 function removeTask(id) {
   if (!confirm('このタスクを削除しますか？')) return;
-  items = items.filter(i => String(i.id) !== String(id));
-  openRemarks.delete(id);
-  save(); renderTasks();
+  items = items.filter(i => String(i.id)!==String(id)); openRemarks.delete(id); save(); renderTasks();
 }
-
 function toggleRemarks(id) {
-  if (openRemarks.has(id)) openRemarks.delete(id);
-  else openRemarks.add(id);
+  if (openRemarks.has(id)) openRemarks.delete(id); else openRemarks.add(id);
   renderTasks();
-  if (openRemarks.has(id)) setTimeout(() => { const e = document.getElementById('ri-' + id); if (e) e.focus(); }, 40);
+  if (openRemarks.has(id)) setTimeout(()=>{document.getElementById('ri-'+id)?.focus();},40);
 }
-
 function addRemark(id) {
-  const e = document.getElementById('ri-' + id); if (!e) return;
+  const e = document.getElementById('ri-'+id); if (!e) return;
   const t = e.value.trim(); if (!t) return;
-  items = items.map(i => String(i.id) !== String(id) ? i : { ...i, remarks: [...(i.remarks||[]), { text: t, done: false, createdAt: nowFull() }] });
-  save(); renderTasks();
-  setTimeout(() => { const e2 = document.getElementById('ri-' + id); if (e2) e2.focus(); }, 40);
+  items = items.map(i => String(i.id)!==String(id)?i:{...i,remarks:[...(i.remarks||[]),{text:t,done:false,createdAt:nowFull()}]});
+  save(); renderTasks(); setTimeout(()=>{document.getElementById('ri-'+id)?.focus();},40);
 }
-function toggleRemark(id, idx) {
-  items = items.map(i => String(i.id) !== String(id) ? i : { ...i, remarks: (i.remarks||[]).map((r,j) => j === idx ? { ...r, done: !r.done } : r) });
-  save(); renderTasks();
-}
-function deleteRemark(id, idx) {
-  items = items.map(i => String(i.id) !== String(id) ? i : { ...i, remarks: (i.remarks||[]).filter((_, j) => j !== idx) });
-  save(); renderTasks();
-}
+function toggleRemark(id,idx) { items = items.map(i => String(i.id)!==String(id)?i:{...i,remarks:(i.remarks||[]).map((r,j)=>j===idx?{...r,done:!r.done}:r)}); save(); renderTasks(); }
+function deleteRemark(id,idx) { items = items.map(i => String(i.id)!==String(id)?i:{...i,remarks:(i.remarks||[]).filter((_,j)=>j!==idx)}); save(); renderTasks(); }
 
-/* ===== TASK FORM ===== */
 function openForm() {
   const ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'formOverlay';
-  ov.addEventListener('click', e => { if (e.target === ov) closeForm(); });
+  ov.addEventListener('click', e => { if (e.target===ov) closeForm(); });
   const isEdit = editId != null;
-  const cur = isEdit ? items.find(i => String(i.id) === String(editId)) : { content: '', requester: '', assignee: '', due: '', priority: 'mid' };
-  const priOpts = ['high','mid','low'].map(p => '<option value="' + p + '"' + (cur.priority === p ? ' selected' : '') + '>' + PRI_LABEL[p] + '</option>').join('');
-  ov.innerHTML = '<div class="sheet"><h2>' + (isEdit ? 'タスクを編集' : 'タスクを追加') + '</h2>' +
-    '<div class="field"><label>タスク内容</label><input id="f_content" placeholder="例：週次レポートの作成" value="' + esc(cur.content) + '"></div>' +
-    '<div class="twocol"><div class="field"><label>依頼者</label><input id="f_req" placeholder="例：部長" value="' + esc(cur.requester) + '"></div>' +
-    '<div class="field"><label>担当</label><input id="f_asg" placeholder="例：自分" value="' + esc(cur.assignee) + '"></div></div>' +
-    '<div class="twocol"><div class="field"><label>期限</label><input id="f_due" type="date" value="' + (cur.due||'') + '"></div>' +
-    '<div class="field"><label>優先度</label><select id="f_pri">' + priOpts + '</select></div></div>' +
-    '<div class="form-actions"><button class="btn-cancel" onclick="closeForm()">やめる</button><button class="btn-save" onclick="saveForm()">' + (isEdit ? '保存する' : '追加する') + '</button></div></div>';
+  const cur = isEdit ? items.find(i => String(i.id)===String(editId)) : {content:'',requester:'',assignee:'',due:'',priority:'mid'};
+  const priOpts = ['high','mid','low'].map(p => '<option value="'+p+'"'+(cur.priority===p?' selected':'')+'>'+PRI_LABEL[p]+'</option>').join('');
+  ov.innerHTML = '<div class="sheet"><h2>'+(isEdit?'タスクを編集':'タスクを追加')+'</h2>'+
+    '<div class="field"><label>タスク内容</label><input id="f_content" placeholder="例：週次レポートの作成" value="'+esc(cur.content)+'"></div>'+
+    '<div class="twocol"><div class="field"><label>依頼者</label><input id="f_req" placeholder="例：部長" value="'+esc(cur.requester)+'"></div>'+
+    '<div class="field"><label>担当</label><input id="f_asg" placeholder="例：自分" value="'+esc(cur.assignee)+'"></div></div>'+
+    '<div class="twocol"><div class="field"><label>期限</label><input id="f_due" type="date" value="'+(cur.due||'')+'"></div>'+
+    '<div class="field"><label>優先度</label><select id="f_pri">'+priOpts+'</select></div></div>'+
+    '<div class="form-actions"><button class="btn-cancel" onclick="closeForm()">やめる</button><button class="btn-save" onclick="saveForm()">'+(isEdit?'保存する':'追加する')+'</button></div></div>';
   document.body.appendChild(ov);
-  setTimeout(() => { document.getElementById('f_content')?.focus(); }, 50);
+  setTimeout(()=>{document.getElementById('f_content')?.focus();},50);
 }
 function closeForm() { document.getElementById('formOverlay')?.remove(); editId = null; }
 function openEdit(id) { editId = id; openForm(); }
@@ -689,15 +710,11 @@ function saveForm() {
   const assignee = document.getElementById('f_asg').value.trim();
   const due = document.getElementById('f_due').value;
   const priority = document.getElementById('f_pri').value || 'mid';
-  if (editId != null) {
-    items = items.map(i => String(i.id) !== String(editId) ? i : { ...i, content, requester, assignee, due, priority, updatedAt: nowFull() });
-  } else {
-    items.push({ id: String(Date.now()) + Math.random().toString(36).slice(2,6), content, requester, assignee, due, priority, done: false, createdAt: nowFull(), remarks: [] });
-  }
+  if (editId != null) { items = items.map(i => String(i.id)!==String(editId)?i:{...i,content,requester,assignee,due,priority,updatedAt:nowFull()}); }
+  else { items.push({id:String(Date.now())+Math.random().toString(36).slice(2,6),content,requester,assignee,due,priority,done:false,createdAt:nowFull(),remarks:[]}); }
   save(); closeForm(); renderTasks();
 }
 
-/* ===== MEMO ===== */
 function renderMemos() {
   const grid = document.getElementById('memoGrid');
   if (!memos.length) { grid.innerHTML = '<div class="empty-msg" style="width:100%">メモはありません。<br>下の入力欄から追加できます。</div>'; return; }
@@ -705,169 +722,134 @@ function renderMemos() {
   memos.forEach(m => {
     const bg = m.color || MEMO_COLORS[0];
     if (editingMemoId === m.id) {
-      h += '<div class="memo-card" style="background:' + bg + ';width:100%;">';
-      h += '<div class="memo-top"><button class="mchk' + (m.done ? ' checked' : '') + '" onclick="toggleMemo(\'' + m.id + '\')">' + (m.done ? '✓' : '') + '</button>';
-      h += '<div style="flex:1;min-width:0;"><textarea id="medit-' + m.id + '" rows="3" style="width:100%;font-size:13px;font-family:var(--font);border:1px solid var(--line);border-radius:6px;padding:6px;background:var(--card);color:var(--ink);resize:vertical;">' + esc(m.text) + '</textarea>';
-      h += '<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;align-items:center;">';
-      MEMO_COLORS.forEach(c => { h += '<button onclick="setEditColor(\'' + m.id + '\',\'' + c + '\')" style="width:16px;height:16px;border-radius:3px;border:1.5px solid ' + (c === bg ? 'var(--accent)' : '#ccc') + ';background:' + c + ';cursor:pointer;padding:0;"></button>'; });
-      h += '<button onclick="saveMemoEdit(\'' + m.id + '\')" style="margin-left:auto;font-size:11px;padding:3px 10px;border:none;background:var(--accent);color:#fff;border-radius:5px;cursor:pointer;">保存</button>';
-      h += '<button onclick="cancelMemoEdit()" style="font-size:11px;padding:3px 8px;border:1px solid var(--line);background:none;border-radius:5px;cursor:pointer;">×</button>';
+      h += '<div class="memo-card" style="background:'+bg+';width:100%;"><div class="memo-top"><button class="mchk'+(m.done?' checked':'')+'" onclick="toggleMemo(\''+m.id+'\')">'+(m.done?'✓':'')+'</button>';
+      h += '<div style="flex:1;min-width:0;"><textarea id="medit-'+m.id+'" rows="3" style="width:100%;font-size:13px;font-family:var(--font);border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--card);color:var(--ink);resize:vertical;transition:border-color .2s,box-shadow .2s;" onfocus="this.style.borderColor=\'var(--accent)\';this.style.boxShadow=\'0 0 0 3px var(--accent-glow)\'" onblur="this.style.borderColor=\'var(--line)\';this.style.boxShadow=\'none\'">'+esc(m.text)+'</textarea>';
+      h += '<div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;align-items:center;">';
+      MEMO_COLORS.forEach(c => { h += '<button onclick="setEditColor(\''+m.id+'\',\''+c+'\')" style="width:18px;height:18px;border-radius:5px;border:2px solid '+(c===bg?'var(--accent)':'transparent')+';background:'+c+';cursor:pointer;padding:0;box-shadow:inset 0 -1px 2px rgba(0,0,0,.08);transition:all .15s;"></button>'; });
+      h += '<button onclick="saveMemoEdit(\''+m.id+'\')" style="margin-left:auto;font-size:11px;padding:5px 12px;border:none;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border-radius:7px;cursor:pointer;font-weight:600;font-family:var(--font);">保存</button>';
+      h += '<button onclick="cancelMemoEdit()" style="font-size:11px;padding:5px 10px;border:1.5px solid var(--line);background:none;border-radius:7px;cursor:pointer;color:var(--sub);font-family:var(--font);">×</button>';
       h += '</div></div></div></div>';
     } else {
-      h += '<div class="memo-card" style="background:' + bg + ';">';
-      h += '<button class="mdel" onclick="deleteMemo(\'' + m.id + '\')">×</button>';
-      h += '<div class="memo-top"><button class="mchk' + (m.done ? ' checked' : '') + '" onclick="toggleMemo(\'' + m.id + '\')">' + (m.done ? '✓' : '') + '</button>';
-      h += '<div class="memo-text' + (m.done ? ' done' : '') + '" onclick="startMemoEdit(\'' + m.id + '\')" title="タップで編集">' + esc(m.text).replace(/\n/g,'<br>') + '</div></div>';
-      h += '<div class="memo-date">' + (m.created ? fmtDate(m.created) : '') + '</div>';
-      h += '</div>';
+      h += '<div class="memo-card" style="background:'+bg+';">';
+      h += '<button class="mdel" onclick="deleteMemo(\''+m.id+'\')">×</button>';
+      h += '<div class="memo-top"><button class="mchk'+(m.done?' checked':'')+'" onclick="toggleMemo(\''+m.id+'\')">'+(m.done?'✓':'')+'</button>';
+      h += '<div class="memo-text'+(m.done?' done':'')+'" onclick="startMemoEdit(\''+m.id+'\')" title="タップで編集">'+esc(m.text).replace(/\n/g,'<br>')+'</div></div>';
+      h += '<div class="memo-date">'+(m.created?fmtDate(m.created):'')+'</div></div>';
     }
   });
   grid.innerHTML = h;
-  if (editingMemoId != null) { const e = document.getElementById('medit-' + editingMemoId); if (e) { e.focus(); e.setSelectionRange(e.value.length, e.value.length); } }
+  if (editingMemoId!=null) { const e=document.getElementById('medit-'+editingMemoId); if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length);} }
 }
-
 function addMemo() {
   const inp = document.getElementById('memoInput'); if (!inp) return;
   const text = inp.value.trim(); if (!text) return;
-  memos.unshift({ id: String(Date.now()) + Math.random().toString(36).slice(2,6), text, done: false, color: memoColor, created: todayStr(), createdAt: nowFull() });
-  save(); inp.value = ''; renderMemos();
-  setTimeout(() => { document.getElementById('memoInput')?.focus(); }, 30);
+  memos.unshift({id:String(Date.now())+Math.random().toString(36).slice(2,6),text,done:false,color:memoColor,created:todayStr(),createdAt:nowFull()});
+  save(); inp.value=''; renderMemos(); setTimeout(()=>{document.getElementById('memoInput')?.focus();},30);
 }
-function toggleMemo(id) { memos = memos.map(m => String(m.id) === String(id) ? { ...m, done: !m.done } : m); save(); renderMemos(); }
-function deleteMemo(id) { memos = memos.filter(m => String(m.id) !== String(id)); if (String(editingMemoId) === String(id)) editingMemoId = null; save(); renderMemos(); }
-function startMemoEdit(id) { editingMemoId = id; renderMemos(); }
-function cancelMemoEdit() { editingMemoId = null; renderMemos(); }
+function toggleMemo(id) { memos=memos.map(m=>String(m.id)===String(id)?{...m,done:!m.done}:m); save(); renderMemos(); }
+function deleteMemo(id) { memos=memos.filter(m=>String(m.id)!==String(id)); if(String(editingMemoId)===String(id))editingMemoId=null; save(); renderMemos(); }
+function startMemoEdit(id) { editingMemoId=id; renderMemos(); }
+function cancelMemoEdit() { editingMemoId=null; renderMemos(); }
 function saveMemoEdit(id) {
-  const e = document.getElementById('medit-' + id); if (!e) return;
-  const t = e.value.trim(); if (!t) { cancelMemoEdit(); return; }
-  memos = memos.map(m => String(m.id) === String(id) ? { ...m, text: t, updatedAt: nowFull() } : m);
-  editingMemoId = null; save(); renderMemos();
+  const e=document.getElementById('medit-'+id); if(!e) return;
+  const t=e.value.trim(); if(!t){cancelMemoEdit();return;}
+  memos=memos.map(m=>String(m.id)===String(id)?{...m,text:t,updatedAt:nowFull()}:m);
+  editingMemoId=null; save(); renderMemos();
 }
-function setEditColor(id, color) { memos = memos.map(m => String(m.id) === String(id) ? { ...m, color } : m); save(); renderMemos(); }
+function setEditColor(id,color) { memos=memos.map(m=>String(m.id)===String(id)?{...m,color}:m); save(); renderMemos(); }
 function clearDoneMemos() {
-  const cnt = memos.filter(m => m.done).length;
-  if (!cnt) { toast('完了済みメモはありません'); return; }
-  if (!confirm(cnt + '件の完了済みメモを削除しますか？')) return;
-  memos = memos.filter(m => !m.done); save(); renderMemos();
+  const cnt=memos.filter(m=>m.done).length;
+  if(!cnt){toast('完了済みメモはありません');return;}
+  if(!confirm(cnt+'件の完了済みメモを削除しますか？'))return;
+  memos=memos.filter(m=>!m.done); save(); renderMemos();
 }
-
 function initColorPresets() {
-  const wrap = document.getElementById('colorPresets');
-  wrap.innerHTML = MEMO_COLORS.map(c =>
-    '<button class="color-preset' + (c === memoColor ? ' selected' : '') + '" style="background:' + c + ';" onclick="selectColor(\'' + c + '\')"></button>'
+  document.getElementById('colorPresets').innerHTML = MEMO_COLORS.map(c =>
+    '<button class="color-preset'+(c===memoColor?' selected':'')+'" style="background:'+c+';" onclick="selectColor(\''+c+'\')"></button>'
   ).join('');
 }
-function selectColor(c) { memoColor = c; initColorPresets(); }
+function selectColor(c) { memoColor=c; initColorPresets(); }
 
-/* ===== WORK LOG ===== */
 function renderWorkLogs() {
-  const list = document.getElementById('wlList');
-  if (!workLogs.length) { list.innerHTML = '<div class="empty-msg">まだ記録がありません。<br>「＋ 記録」から追加してください。</div>'; return; }
-  const sorted = [...workLogs].sort((a, b) => b.id - a.id);
-  let h = '';
-  sorted.forEach(wl => {
-    const dateLabel = wl.date ? (() => { const p = wl.date.split('-'); return parseInt(p[1]) + '/' + parseInt(p[2]); })() : '';
-    h += '<div class="wl-item"><div class="wl-head"><span class="wl-datetime">📅 ' + esc(dateLabel) + (wl.time ? ' ' + esc(wl.time) : '') + '</span>';
-    h += '<div class="wl-actions"><button class="wl-btn" onclick="editWorklog(\'' + wl.id + '\')">✎</button>';
-    h += '<button class="wl-btn" onclick="deleteWorklog(\'' + wl.id + '\')">×</button></div></div>';
-    h += '<div class="wl-content">' + esc(wl.content) + '</div>';
-    if (wl.notes) h += '<div class="wl-notes">📝 ' + esc(wl.notes) + '</div>';
-    h += '</div>';
+  const list=document.getElementById('wlList');
+  if(!workLogs.length){list.innerHTML='<div class="empty-msg">まだ記録がありません。<br>「＋ 記録」から追加してください。</div>';return;}
+  const sorted=[...workLogs].sort((a,b)=>b.id-a.id);
+  let h='';
+  sorted.forEach(wl=>{
+    const dateLabel=wl.date?(()=>{const p=wl.date.split('-');return parseInt(p[1])+'/'+parseInt(p[2]);})():'';
+    h+='<div class="wl-item"><div class="wl-head"><span class="wl-datetime">📅 '+esc(dateLabel)+(wl.time?' '+esc(wl.time):'')+'</span>';
+    h+='<div class="wl-actions"><button class="wl-btn" onclick="editWorklog(\''+wl.id+'\')">✎</button>';
+    h+='<button class="wl-btn" onclick="deleteWorklog(\''+wl.id+'\')">×</button></div></div>';
+    h+='<div class="wl-content">'+esc(wl.content)+'</div>';
+    if(wl.notes)h+='<div class="wl-notes">📝 '+esc(wl.notes)+'</div>';
+    h+='</div>';
   });
-  list.innerHTML = h;
+  list.innerHTML=h;
 }
-
 function showWlForm(wl) {
-  document.getElementById('wf_date').value = wl ? wl.date : todayStr();
-  document.getElementById('wf_time').value = wl ? wl.time : nowTimeStr();
-  document.getElementById('wf_content').value = wl ? wl.content : '';
-  document.getElementById('wf_notes').value = wl ? (wl.notes || '') : '';
-  editWlId = wl ? wl.id : null;
+  document.getElementById('wf_date').value=wl?wl.date:todayStr();
+  document.getElementById('wf_time').value=wl?wl.time:nowTimeStr();
+  document.getElementById('wf_content').value=wl?wl.content:'';
+  document.getElementById('wf_notes').value=wl?(wl.notes||''):'';
+  editWlId=wl?wl.id:null;
   document.getElementById('wlForm').classList.add('open');
-  setTimeout(() => { document.getElementById('wf_content')?.focus(); }, 30);
+  setTimeout(()=>{document.getElementById('wf_content')?.focus();},30);
 }
-function hideWlForm() { document.getElementById('wlForm').classList.remove('open'); editWlId = null; }
+function hideWlForm() { document.getElementById('wlForm').classList.remove('open'); editWlId=null; }
 function saveWorklog() {
-  const date = document.getElementById('wf_date').value;
-  const time = document.getElementById('wf_time').value;
-  const content = document.getElementById('wf_content').value.trim();
-  const notes = document.getElementById('wf_notes').value.trim();
-  if (!content) { toast('作業内容を入力してください'); return; }
-  if (editWlId != null) { workLogs = workLogs.map(w => String(w.id) !== String(editWlId) ? w : { ...w, date, time, content, notes, updatedAt: nowFull() }); }
-  else { workLogs.push({ id: Date.now(), date, time, content, notes, createdAt: nowFull() }); }
+  const date=document.getElementById('wf_date').value, time=document.getElementById('wf_time').value;
+  const content=document.getElementById('wf_content').value.trim(), notes=document.getElementById('wf_notes').value.trim();
+  if(!content){toast('作業内容を入力してください');return;}
+  if(editWlId!=null){workLogs=workLogs.map(w=>String(w.id)!==String(editWlId)?w:{...w,date,time,content,notes,updatedAt:nowFull()});}
+  else{workLogs.push({id:Date.now(),date,time,content,notes,createdAt:nowFull()});}
   save(); hideWlForm(); renderWorkLogs();
 }
-function editWorklog(id) { const wl = workLogs.find(w => String(w.id) === String(id)); if (wl) showWlForm(wl); }
-function deleteWorklog(id) {
-  if (!confirm('この記録を削除しますか？')) return;
-  workLogs = workLogs.filter(w => String(w.id) !== String(id)); save(); renderWorkLogs();
-}
+function editWorklog(id) { const wl=workLogs.find(w=>String(w.id)===String(id)); if(wl) showWlForm(wl); }
+function deleteWorklog(id) { if(!confirm('この記録を削除しますか？'))return; workLogs=workLogs.filter(w=>String(w.id)!==String(id)); save(); renderWorkLogs(); }
 
-/* ===== EXPORT / IMPORT ===== */
 function exportJSON() {
-  const data = { version: '1.0', exportedAt: nowFull(), items, memos, workLogs };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8;' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = 'タスクマネージャー_' + todayStr() + '.json'; a.click();
-  URL.revokeObjectURL(a.href);
+  const data={version:'1.0',exportedAt:nowFull(),items,memos,workLogs};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='タスクマネージャー_'+todayStr()+'.json'; a.click(); URL.revokeObjectURL(a.href);
   toast('JSONを保存しました');
 }
 function exportCSV() {
-  const BOM = '﻿';
-  const header = 'タスク,優先度,期限,依頼者,担当,状態,作成日,完了日';
-  const rows = items.map(it =>
-    [it.content, PRI_LABEL[it.priority||'mid'], it.due||'', it.requester||'', it.assignee||'',
-     it.done ? '完了' : '未完了', it.createdAt||'', it.doneAt||'']
-    .map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')
-  );
-  const blob = new Blob([BOM + header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = 'タスク一覧_' + todayStr() + '.csv'; a.click();
-  URL.revokeObjectURL(a.href);
+  const BOM='﻿', header='タスク,優先度,期限,依頼者,担当,状態,作成日,完了日';
+  const rows=items.map(it=>[it.content,PRI_LABEL[it.priority||'mid'],it.due||'',it.requester||'',it.assignee||'',it.done?'完了':'未完了',it.createdAt||'',it.doneAt||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+  const blob=new Blob([BOM+header+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='タスク一覧_'+todayStr()+'.csv'; a.click(); URL.revokeObjectURL(a.href);
   toast('CSVを保存しました');
 }
 function importJSON(input) {
-  const file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (data.items) items = data.items;
-      if (data.memos) memos = data.memos;
-      if (data.workLogs) workLogs = data.workLogs;
-      save(); renderTasks(); renderMemos(); renderWorkLogs(); updateStats();
-      toast('データを復元しました');
-    } catch { toast('JSONの読み込みに失敗しました'); }
+  const file=input.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{const data=JSON.parse(e.target.result);
+    if(data.items)items=data.items; if(data.memos)memos=data.memos; if(data.workLogs)workLogs=data.workLogs;
+    save(); renderTasks(); renderMemos(); renderWorkLogs(); updateStats();
+    toast('データを復元しました');
+    }catch{toast('JSONの読み込みに失敗しました');}
   };
-  reader.readAsText(file);
-  input.value = '';
+  reader.readAsText(file); input.value='';
 }
-
-/* ===== STATS ===== */
 function updateStats() {
-  const el = id => document.getElementById(id);
-  el('statTasks').textContent = items.length;
-  el('statLogs').textContent = workLogs.length;
-  el('statMemos').textContent = memos.length;
+  document.getElementById('statTasks').textContent=items.length;
+  document.getElementById('statLogs').textContent=workLogs.length;
+  document.getElementById('statMemos').textContent=memos.length;
 }
-
-/* ===== CLEAR ALL ===== */
 function clearAll() {
-  if (!confirm('全データを削除します。この操作は元に戻せません。\n\n本当に削除しますか？')) return;
-  items = []; workLogs = []; memos = [];
-  save(); renderTasks(); renderMemos(); renderWorkLogs(); updateStats();
-  toast('全データを削除しました');
+  if(!confirm('全データを削除します。この操作は元に戻せません。\n\n本当に削除しますか？'))return;
+  items=[]; workLogs=[]; memos=[];
+  save(); renderTasks(); renderMemos(); renderWorkLogs(); updateStats(); toast('全データを削除しました');
 }
 
-/* ===== INIT ===== */
-document.getElementById('dateLabel').textContent = (() => {
-  const d = new Date(), w = ['日','月','火','水','木','金','土'][d.getDay()];
-  return (d.getMonth()+1) + '/' + d.getDate() + '（' + w + '）';
+document.getElementById('dateLabel').textContent=(()=>{
+  const d=new Date(),w=['日','月','火','水','木','金','土'][d.getDay()];
+  return (d.getMonth()+1)+'/'+d.getDate()+'（'+w+'）';
 })();
-initColorPresets();
-renderTasks();
-renderMemos();
-renderWorkLogs();
+initColorPresets(); renderTasks(); renderMemos(); renderWorkLogs();
 </script>
 </body>
 </html>
