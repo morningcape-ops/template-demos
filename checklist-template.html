@@ -1,0 +1,528 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>業務チェックシート</title>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --text2: #666;
+    --accent: #2563eb;
+    --accent-light: #e8f0fe;
+    --border: #e2e5ea;
+    --green: #059669;
+    --green-light: #d1fae5;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --orange: #ea580c;
+    --orange-light: #fff7ed;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh;
+  }
+  .header {
+    background: var(--accent); color: #fff; padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header h1 { font-size: 18px; font-weight: 700; }
+  .header .date { font-size: 13px; opacity: 0.85; }
+
+  .tabs {
+    display: flex; background: var(--card); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .tab {
+    flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 600;
+    color: var(--text2); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .page { display: none; padding: 16px; max-width: 640px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  .card {
+    background: var(--card); border-radius: var(--radius); padding: 16px;
+    margin-bottom: 12px; border: 1px solid var(--border);
+  }
+  .card h2 { font-size: 15px; margin-bottom: 12px; color: var(--text2); }
+
+  /* 進捗バー */
+  .progress-wrap { margin-bottom: 16px; }
+  .progress-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.3s; }
+  .progress-text { display: flex; justify-content: space-between; font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+  /* チェック項目 */
+  .check-section { margin-bottom: 16px; }
+  .section-title {
+    font-size: 14px; font-weight: 700; padding: 8px 12px;
+    background: var(--accent-light); color: var(--accent);
+    border-radius: 6px; margin-bottom: 8px;
+  }
+  .check-item {
+    display: flex; align-items: flex-start; gap: 10px; padding: 10px 8px;
+    border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-item:hover { background: #f9fafb; }
+  .check-box {
+    width: 24px; height: 24px; min-width: 24px; border: 2px solid var(--border);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #fff; transition: all 0.2s; margin-top: 1px;
+  }
+  .check-item.checked .check-box { background: var(--green); border-color: var(--green); }
+  .check-item.checked .check-box::after { content: '✓'; }
+  .check-item.ng .check-box { background: var(--red); border-color: var(--red); }
+  .check-item.ng .check-box::after { content: '!'; }
+  .check-label { flex: 1; font-size: 14px; }
+  .check-item.checked .check-label { color: var(--text2); text-decoration: line-through; }
+  .check-note {
+    font-size: 12px; color: var(--text2); margin-top: 2px; font-style: italic;
+  }
+  .check-actions { display: flex; gap: 4px; }
+  .check-actions button {
+    padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px;
+    background: var(--card); font-size: 11px; cursor: pointer;
+  }
+  .check-actions button.ng-btn { color: var(--red); border-color: var(--red); }
+  .check-actions button.ng-btn.active { background: var(--red-light); }
+
+  /* 日付選択 */
+  .date-picker { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .date-picker input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; font-family: inherit; }
+  .date-picker .today-btn {
+    padding: 6px 14px; background: var(--accent); color: #fff; border: none;
+    border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;
+  }
+
+  /* 履歴 */
+  .history-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+  }
+  .history-item:hover { background: #f9fafb; }
+  .history-date { font-weight: 600; }
+  .history-badge { padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .history-badge.complete { background: var(--green-light); color: var(--green); }
+  .history-badge.partial { background: var(--orange-light); color: var(--orange); }
+  .history-badge.ng { background: var(--red-light); color: var(--red); }
+
+  /* 設定 */
+  .template-item {
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .template-item:last-child { border-bottom: none; }
+  .template-name { font-weight: 600; font-size: 15px; }
+  .template-count { font-size: 13px; color: var(--text2); }
+  .template-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px;
+    font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+  .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .btn-danger { background: transparent; color: var(--red); border: 1px solid var(--red); }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 4px; }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 15px; font-family: inherit; background: var(--bg);
+  }
+  .form-group textarea { min-height: 80px; resize: vertical; }
+
+  .empty { text-align: center; padding: 32px; color: var(--text2); font-size: 14px; }
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: #333; color: #fff; padding: 10px 24px; border-radius: 20px;
+    font-size: 14px; z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  .ng-memo-input {
+    margin-top: 6px; display: flex; gap: 6px;
+  }
+  .ng-memo-input input {
+    flex: 1; padding: 6px 10px; border: 1px solid var(--red);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>業務チェックシート</h1>
+  <div class="date" id="headerDate"></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('check')">チェック</div>
+  <div class="tab" onclick="switchTab('history')">履歴</div>
+  <div class="tab" onclick="switchTab('settings')">テンプレート</div>
+</div>
+
+<!-- チェック実行 -->
+<div class="page active" id="page-check">
+  <div class="date-picker">
+    <input type="date" id="checkDate" onchange="loadDay()">
+    <button class="today-btn" onclick="goToday()">今日</button>
+  </div>
+
+  <div class="card">
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text">
+        <span id="progressLabel">0 / 0</span>
+        <span id="progressPct">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="checkBody"></div>
+
+  <div class="card" id="ngSummaryCard" style="display:none">
+    <h2 style="color:var(--red)">要対応項目</h2>
+    <div id="ngSummary"></div>
+  </div>
+</div>
+
+<!-- 履歴 -->
+<div class="page" id="page-history">
+  <div class="card">
+    <h2>チェック履歴</h2>
+    <div id="historyList"></div>
+  </div>
+  <div class="card" style="text-align:center">
+    <button class="btn btn-outline btn-sm" onclick="exportCSV()">CSVダウンロード</button>
+  </div>
+</div>
+
+<!-- テンプレート設定 -->
+<div class="page" id="page-settings">
+  <div class="card">
+    <h2>チェックリストのテンプレート</h2>
+    <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">
+      業務に合わせてセクションと項目を自由に編集できます
+    </p>
+    <div id="templateList"></div>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="showAddSection()">セクションを追加</button>
+  </div>
+
+  <div class="card" id="addSectionCard" style="display:none">
+    <h2>セクション追加</h2>
+    <div class="form-group">
+      <label>セクション名</label>
+      <input type="text" id="newSectionName" placeholder="例：始業前確認">
+    </div>
+    <div class="form-group">
+      <label>チェック項目（1行に1つ）</label>
+      <textarea id="newSectionItems" placeholder="照明・空調の確認&#10;レジの動作確認&#10;在庫数の確認"></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="addSection()">追加する</button>
+  </div>
+
+  <div class="card">
+    <h2>データ管理</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0;">
+      <span style="color:var(--red)">全データ削除</span>
+      <button class="btn btn-danger btn-sm" onclick="clearAll()">削除</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>このアプリについて</h2>
+    <p style="font-size:13px; color:var(--text2); line-height:1.8;">
+      データはこのブラウザ内に保存されます。<br>
+      定期的にCSVダウンロードでバックアップしてください。<br>
+      ブラウザのデータを消去すると記録も消えます。
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ★差し替え：初期テンプレート（業種に合わせて変更）
+const DEFAULT_TEMPLATE = [
+  {
+    section: '始業前確認',
+    items: ['施設・設備の安全確認', '清掃状態の確認', '備品・消耗品の在庫確認', '連絡事項の確認', '前日からの引き継ぎ確認']
+  },
+  {
+    section: '業務中チェック',
+    items: ['来客・問い合わせ対応', '進行中案件の進捗確認', '期限のある書類・提出物', '報告・連絡・相談の実施']
+  },
+  {
+    section: '終業時確認',
+    items: ['本日の業務記録の記入', '明日の予定・準備の確認', '施錠・電源の確認', '引き継ぎ事項のメモ']
+  }
+];
+
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem('cl_'+k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('cl_'+k, JSON.stringify(v)); } catch {} }
+};
+
+let template = LS.get('template', DEFAULT_TEMPLATE);
+let records = LS.get('records', {});
+
+function init() {
+  goToday();
+  renderTemplateList();
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function goToday() {
+  document.getElementById('checkDate').value = todayStr();
+  loadDay();
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const pages = ['check','history','settings'];
+    t.classList.toggle('active', pages[i] === name);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if (name === 'history') renderHistory();
+}
+
+// チェック画面
+function loadDay() {
+  const date = document.getElementById('checkDate').value;
+  document.getElementById('headerDate').textContent = date;
+  const dayData = records[date] || {};
+  const body = document.getElementById('checkBody');
+
+  let totalItems = 0;
+  let checkedItems = 0;
+  let ngItems = [];
+
+  body.innerHTML = template.map((sec, si) => {
+    let itemsHtml = sec.items.map((item, ii) => {
+      const key = si + '_' + ii;
+      const state = dayData[key] || '';
+      const memo = dayData[key + '_memo'] || '';
+      totalItems++;
+      if (state === 'ok') checkedItems++;
+      if (state === 'ng') { checkedItems++; ngItems.push({section: sec.section, item, memo}); }
+
+      return `
+        <div class="check-item ${state === 'ok' ? 'checked' : state === 'ng' ? 'ng' : ''}" id="ci_${key}">
+          <div class="check-box" onclick="toggleCheck('${date}','${key}')"></div>
+          <div style="flex:1">
+            <div class="check-label">${item}</div>
+            ${memo ? `<div class="check-note">→ ${memo}</div>` : ''}
+            ${state === 'ng' && !memo ? `
+              <div class="ng-memo-input">
+                <input type="text" placeholder="備考（何が問題？）" id="memo_${key}">
+                <button class="btn btn-sm btn-outline" onclick="saveMemo('${date}','${key}')">保存</button>
+              </div>
+            ` : ''}
+          </div>
+          <div class="check-actions">
+            <button class="ng-btn ${state === 'ng' ? 'active' : ''}" onclick="toggleNG('${date}','${key}')">NG</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `<div class="card check-section">
+      <div class="section-title">${sec.section}</div>
+      ${itemsHtml}
+    </div>`;
+  }).join('');
+
+  // 進捗バー
+  const pct = totalItems ? Math.round(checkedItems / totalItems * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = checkedItems + ' / ' + totalItems;
+  document.getElementById('progressPct').textContent = pct + '%';
+
+  // NG一覧
+  const ngCard = document.getElementById('ngSummaryCard');
+  if (ngItems.length) {
+    ngCard.style.display = '';
+    document.getElementById('ngSummary').innerHTML = ngItems.map(n =>
+      `<div style="padding:6px 0; border-bottom:1px solid var(--border); font-size:14px;">
+        <span style="color:var(--red); font-weight:600;">${n.section}</span>: ${n.item}
+        ${n.memo ? `<br><span style="font-size:12px; color:var(--text2);">→ ${n.memo}</span>` : ''}
+      </div>`
+    ).join('');
+  } else {
+    ngCard.style.display = 'none';
+  }
+}
+
+function toggleCheck(date, key) {
+  if (!records[date]) records[date] = {};
+  const cur = records[date][key] || '';
+  records[date][key] = cur === 'ok' ? '' : 'ok';
+  if (records[date][key] === 'ok') delete records[date][key + '_memo'];
+  LS.set('records', records);
+  loadDay();
+}
+
+function toggleNG(date, key) {
+  if (!records[date]) records[date] = {};
+  const cur = records[date][key] || '';
+  records[date][key] = cur === 'ng' ? '' : 'ng';
+  LS.set('records', records);
+  loadDay();
+}
+
+function saveMemo(date, key) {
+  const inp = document.getElementById('memo_' + key);
+  if (!inp || !inp.value.trim()) return;
+  if (!records[date]) records[date] = {};
+  records[date][key + '_memo'] = inp.value.trim();
+  LS.set('records', records);
+  loadDay();
+  toast('備考を保存しました');
+}
+
+// 履歴
+function renderHistory() {
+  const dates = Object.keys(records).sort().reverse().slice(0, 30);
+  const list = document.getElementById('historyList');
+  if (!dates.length) { list.innerHTML = '<div class="empty">まだ記録がありません</div>'; return; }
+
+  list.innerHTML = dates.map(date => {
+    const day = records[date];
+    let total = 0, done = 0, ng = 0;
+    template.forEach((sec, si) => {
+      sec.items.forEach((_, ii) => {
+        total++;
+        const st = day[si + '_' + ii] || '';
+        if (st === 'ok') done++;
+        if (st === 'ng') { done++; ng++; }
+      });
+    });
+    const pct = total ? Math.round(done / total * 100) : 0;
+    let badge = 'partial';
+    if (ng > 0) badge = 'ng';
+    else if (pct === 100) badge = 'complete';
+    const labels = { complete: '完了', partial: pct + '%', ng: 'NG ' + ng + '件' };
+
+    return `<div class="history-item" onclick="document.getElementById('checkDate').value='${date}'; loadDay(); switchTab('check');">
+      <span class="history-date">${date}</span>
+      <span class="history-badge ${badge}">${labels[badge]}</span>
+    </div>`;
+  }).join('');
+}
+
+// テンプレート設定
+function renderTemplateList() {
+  const list = document.getElementById('templateList');
+  list.innerHTML = template.map((sec, i) => `
+    <div class="template-item">
+      <div class="template-name">${sec.section}</div>
+      <div class="template-count">${sec.items.length}項目: ${sec.items.join('、')}</div>
+      <div class="template-actions">
+        <button class="btn btn-outline btn-sm" onclick="editSection(${i})">編集</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteSection(${i})">削除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showAddSection() {
+  const card = document.getElementById('addSectionCard');
+  card.style.display = card.style.display === 'none' ? '' : 'none';
+  document.getElementById('newSectionName').value = '';
+  document.getElementById('newSectionItems').value = '';
+}
+
+function addSection() {
+  const name = document.getElementById('newSectionName').value.trim();
+  const items = document.getElementById('newSectionItems').value.trim().split('\n').map(s => s.trim()).filter(Boolean);
+  if (!name || !items.length) { toast('セクション名と項目を入力してください'); return; }
+
+  template.push({ section: name, items });
+  LS.set('template', template);
+  renderTemplateList();
+  document.getElementById('addSectionCard').style.display = 'none';
+  loadDay();
+  toast(name + ' を追加しました');
+}
+
+function editSection(i) {
+  const sec = template[i];
+  const name = prompt('セクション名', sec.section);
+  if (!name) return;
+  const items = prompt('項目（カンマ区切り）', sec.items.join('、'));
+  if (!items) return;
+  template[i] = { section: name, items: items.split('、').map(s => s.trim()).filter(Boolean) };
+  LS.set('template', template);
+  renderTemplateList();
+  loadDay();
+  toast('更新しました');
+}
+
+function deleteSection(i) {
+  if (!confirm(template[i].section + ' を削除しますか？')) return;
+  template.splice(i, 1);
+  LS.set('template', template);
+  renderTemplateList();
+  loadDay();
+  toast('削除しました');
+}
+
+// CSV出力
+function exportCSV() {
+  const dates = Object.keys(records).sort();
+  if (!dates.length) { toast('データがありません'); return; }
+
+  const header = ['日付', 'セクション', '項目', '状態', '備考'];
+  const rows = [];
+  dates.forEach(date => {
+    const day = records[date];
+    template.forEach((sec, si) => {
+      sec.items.forEach((item, ii) => {
+        const key = si + '_' + ii;
+        const st = day[key] || '未';
+        const memo = day[key + '_memo'] || '';
+        rows.push([date, sec.section, item, st === 'ok' ? 'OK' : st === 'ng' ? 'NG' : '未', '"' + memo + '"'].join(','));
+      });
+    });
+  });
+  const bom = '﻿';
+  const blob = new Blob([bom + header.join(',') + '\n' + rows.join('\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = 'チェック記録.csv'; a.click();
+  URL.revokeObjectURL(url);
+  toast('CSVを出力しました');
+}
+
+function clearAll() {
+  if (!confirm('すべてのデータを削除します。\nCSVでバックアップしてください。\n\n本当に削除しますか？')) return;
+  records = {}; template = DEFAULT_TEMPLATE;
+  LS.set('records', records); LS.set('template', template);
+  renderTemplateList(); loadDay();
+  toast('全データを削除しました');
+}
+
+init();
+</script>
+</body>
+</html>

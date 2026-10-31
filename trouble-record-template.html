@@ -1,0 +1,589 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>対応記録</title>
+<style>
+  :root {
+    --bg: #faf5f0;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --text2: #666;
+    --accent: #b45309;
+    --accent-light: #fef3c7;
+    --border: #e5e0d8;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --orange: #ea580c;
+    --orange-light: #fff7ed;
+    --green: #059669;
+    --green-light: #d1fae5;
+    --blue: #2563eb;
+    --blue-light: #e8f0fe;
+    --gray: #6b7280;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh;
+  }
+  .header {
+    background: linear-gradient(135deg, var(--accent), #92400e);
+    color: #fff; padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header h1 { font-size: 18px; font-weight: 700; }
+  .header .sub { font-size: 13px; opacity: 0.85; }
+
+  .tabs {
+    display: flex; background: var(--card); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .tab {
+    flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 600;
+    color: var(--text2); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .page { display: none; padding: 16px; max-width: 640px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  .card {
+    background: var(--card); border-radius: var(--radius); padding: 16px;
+    margin-bottom: 12px; border: 1px solid var(--border);
+  }
+  .card h2 { font-size: 15px; margin-bottom: 12px; color: var(--text2); }
+
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 4px; }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 15px; font-family: inherit; background: #fff;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light);
+  }
+  .form-group textarea { min-height: 80px; resize: vertical; }
+
+  /* 分類タグ */
+  .category-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .cat-btn {
+    padding: 7px 14px; border: 2px solid var(--border); border-radius: 16px;
+    background: var(--card); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .cat-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+
+  /* 重大度 */
+  .severity-row { display: flex; gap: 6px; }
+  .sev-btn {
+    flex: 1; padding: 8px; border: 2px solid var(--border); border-radius: 8px;
+    background: var(--card); font-size: 13px; font-weight: 600;
+    cursor: pointer; text-align: center; transition: all 0.15s;
+  }
+  .sev-btn[data-s="high"] { color: var(--red); }
+  .sev-btn[data-s="mid"] { color: var(--orange); }
+  .sev-btn[data-s="low"] { color: var(--gray); }
+  .sev-btn.active[data-s="high"] { background: var(--red-light); border-color: var(--red); }
+  .sev-btn.active[data-s="mid"] { background: var(--orange-light); border-color: var(--orange); }
+  .sev-btn.active[data-s="low"] { background: #f3f4f6; border-color: var(--gray); }
+
+  /* ステータス */
+  .status-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 12px; font-weight: 600;
+  }
+  .status-badge.open { background: var(--red-light); color: var(--red); }
+  .status-badge.progress { background: var(--orange-light); color: var(--orange); }
+  .status-badge.done { background: var(--green-light); color: var(--green); }
+
+  .sev-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px;
+  }
+  .sev-dot.high { background: var(--red); }
+  .sev-dot.mid { background: var(--orange); }
+  .sev-dot.low { background: var(--gray); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 12px 20px; border: none; border-radius: 8px; font-size: 15px;
+    font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .btn-danger { background: transparent; color: var(--red); border: 1px solid var(--red); }
+  .btn-sm { padding: 8px 14px; font-size: 13px; }
+
+  /* 一覧 */
+  .record-item {
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .record-item:last-child { border-bottom: none; }
+  .rec-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;
+  }
+  .rec-title { font-weight: 600; font-size: 15px; flex: 1; min-width: 0; }
+  .rec-cat { font-size: 11px; padding: 2px 8px; background: #f3f4f6; border-radius: 10px; color: var(--text2); }
+  .rec-body { font-size: 13px; color: var(--text2); margin-top: 4px; white-space: pre-line; max-height: 60px; overflow: hidden; }
+  .rec-meta { font-size: 12px; color: #aaa; margin-top: 4px; }
+  .rec-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+
+  /* 防止策セクション */
+  .prevention { background: var(--blue-light); border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 13px; }
+  .prevention strong { color: var(--blue); }
+
+  .filter-row { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 6px 14px; border: 1px solid var(--border); border-radius: 16px;
+    background: var(--card); font-size: 13px; cursor: pointer; font-weight: 500;
+  }
+  .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* 集計タイル */
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat-tile { text-align: center; padding: 12px 8px; background: var(--card); border-radius: 8px; border: 1px solid var(--border); }
+  .stat-tile .num { font-size: 24px; font-weight: 700; }
+  .stat-tile .lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  .empty { text-align: center; padding: 32px; color: var(--text2); font-size: 14px; }
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: #333; color: #fff; padding: 10px 24px; border-radius: 20px;
+    font-size: 14px; z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* 詳細モーダル */
+  .modal-bg {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    z-index: 50; align-items: flex-end; justify-content: center;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: var(--card); border-radius: 16px 16px 0 0; padding: 20px;
+    width: 100%; max-width: 640px; max-height: 80vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 16px; margin-bottom: 12px; }
+  .modal .close-btn {
+    float: right; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text2);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>対応記録</h1>
+    <div class="sub">トラブル・苦情・ヒヤリハット</div>
+  </div>
+  <div class="sub" id="headerCount"></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('list')">一覧</div>
+  <div class="tab" onclick="switchTab('add')">新規</div>
+  <div class="tab" onclick="switchTab('stats')">集計</div>
+  <div class="tab" onclick="switchTab('settings')">設定</div>
+</div>
+
+<!-- 一覧 -->
+<div class="page active" id="page-list">
+  <div class="filter-row">
+    <button class="filter-btn active" data-f="all" onclick="setFilter('all')">すべて</button>
+    <button class="filter-btn" data-f="open" onclick="setFilter('open')">未対応</button>
+    <button class="filter-btn" data-f="progress" onclick="setFilter('progress')">対応中</button>
+    <button class="filter-btn" data-f="done" onclick="setFilter('done')">完了</button>
+  </div>
+  <div id="recordList"></div>
+</div>
+
+<!-- 新規登録 -->
+<div class="page" id="page-add">
+  <div class="card">
+    <h2>発生状況</h2>
+    <div class="form-group">
+      <label>発生日</label>
+      <input type="date" id="inDate">
+    </div>
+    <div class="form-group">
+      <label>分類</label>
+      <div class="category-row" id="catRow"></div>
+    </div>
+    <div class="form-group">
+      <label>重大度</label>
+      <div class="severity-row">
+        <div class="sev-btn" data-s="high" onclick="setSeverity('high')">重大</div>
+        <div class="sev-btn active" data-s="mid" onclick="setSeverity('mid')">注意</div>
+        <div class="sev-btn" data-s="low" onclick="setSeverity('low')">軽微</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>件名</label>
+      <input type="text" id="inTitle" placeholder="何が起きた？">
+    </div>
+    <div class="form-group">
+      <label>発生状況・詳細</label>
+      <textarea id="inDetail" placeholder="いつ・どこで・誰が・何を・どのように"></textarea>
+    </div>
+  </div>
+  <div class="card">
+    <h2>対応内容</h2>
+    <div class="form-group">
+      <label>対応者</label>
+      <input type="text" id="inHandler" placeholder="例：鈴木">
+    </div>
+    <div class="form-group">
+      <label>対応内容</label>
+      <textarea id="inAction" placeholder="実施した対応を記録"></textarea>
+    </div>
+  </div>
+  <div class="card">
+    <h2>再発防止</h2>
+    <div class="form-group">
+      <label>原因分析</label>
+      <textarea id="inCause" placeholder="なぜ起きたか？" style="min-height:60px;"></textarea>
+    </div>
+    <div class="form-group">
+      <label>再発防止策</label>
+      <textarea id="inPrevention" placeholder="どうすれば防げるか？" style="min-height:60px;"></textarea>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="addRecord()">記録する</button>
+</div>
+
+<!-- 集計 -->
+<div class="page" id="page-stats">
+  <div class="stat-row" id="statTiles"></div>
+  <div class="card">
+    <h2>分類別件数</h2>
+    <div id="catStats"></div>
+  </div>
+  <div class="card">
+    <h2>月別推移</h2>
+    <div id="monthStats"></div>
+  </div>
+</div>
+
+<!-- 設定 -->
+<div class="page" id="page-settings">
+  <div class="card">
+    <h2>分類の編集</h2>
+    <div id="catEditor"></div>
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <input type="text" id="newCat" placeholder="新しい分類名" style="flex:1; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:14px;">
+      <button class="btn btn-outline btn-sm" onclick="addCategory()">追加</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>データ管理</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);">
+      <span>全データCSV出力</span>
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">出力</button>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0;">
+      <span style="color:var(--red)">全データ削除</span>
+      <button class="btn btn-danger btn-sm" onclick="clearAll()">削除</button>
+    </div>
+  </div>
+</div>
+
+<!-- 詳細モーダル -->
+<div class="modal-bg" id="modalBg" onclick="closeModal(event)">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem('tr_'+k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('tr_'+k, JSON.stringify(v)); } catch {} }
+};
+
+/* ★差し替え: 分類カテゴリ */
+const DEFAULT_CATEGORIES = ['苦情', 'トラブル', '事故', 'ヒヤリハット', '設備不具合', 'その他'];
+
+let records = LS.get('records', []);
+let categories = LS.get('cats', DEFAULT_CATEGORIES);
+let currentFilter = 'all';
+let selectedCat = categories[0] || '';
+
+function init() {
+  document.getElementById('inDate').value = todayStr();
+  renderCatButtons();
+  renderList();
+  updateCount();
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function switchTab(name) {
+  const pages = ['list','add','stats','settings'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', pages[i] === name));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if (name === 'stats') renderStats();
+  if (name === 'settings') renderCatEditor();
+}
+
+function setSeverity(s) {
+  document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.sev-btn[data-s="${s}"]`).classList.add('active');
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.f === f));
+  renderList();
+}
+
+function updateCount() {
+  const open = records.filter(r => r.status === 'open').length;
+  const prog = records.filter(r => r.status === 'progress').length;
+  const parts = [];
+  if (open) parts.push('未対応 '+open);
+  if (prog) parts.push('対応中 '+prog);
+  document.getElementById('headerCount').textContent = parts.length ? parts.join(' / ') : '全件対応済';
+}
+
+// カテゴリボタン
+function renderCatButtons() {
+  const row = document.getElementById('catRow');
+  row.innerHTML = categories.map(c =>
+    `<div class="cat-btn ${c === selectedCat ? 'active' : ''}" onclick="selectCat('${c}')">${c}</div>`
+  ).join('');
+}
+function selectCat(c) {
+  selectedCat = c;
+  renderCatButtons();
+}
+
+// 記録追加
+function addRecord() {
+  const title = document.getElementById('inTitle').value.trim();
+  if (!title) { toast('件名を入力してください'); return; }
+
+  const sevBtn = document.querySelector('.sev-btn.active');
+  records.unshift({
+    id: Date.now(),
+    date: document.getElementById('inDate').value,
+    category: selectedCat,
+    severity: sevBtn ? sevBtn.dataset.s : 'mid',
+    title,
+    detail: document.getElementById('inDetail').value.trim(),
+    handler: document.getElementById('inHandler').value.trim(),
+    action: document.getElementById('inAction').value.trim(),
+    cause: document.getElementById('inCause').value.trim(),
+    prevention: document.getElementById('inPrevention').value.trim(),
+    status: 'open',
+    created: todayStr()
+  });
+  LS.set('records', records);
+
+  // フォームリセット
+  document.getElementById('inTitle').value = '';
+  document.getElementById('inDetail').value = '';
+  document.getElementById('inHandler').value = '';
+  document.getElementById('inAction').value = '';
+  document.getElementById('inCause').value = '';
+  document.getElementById('inPrevention').value = '';
+  setSeverity('mid');
+
+  renderList(); updateCount();
+  switchTab('list');
+  toast('記録しました');
+}
+
+// ステータス変更
+function cycleStatus(id) {
+  const r = records.find(r => r.id === id);
+  if (!r) return;
+  const order = ['open', 'progress', 'done'];
+  r.status = order[(order.indexOf(r.status) + 1) % 3];
+  LS.set('records', records);
+  renderList(); updateCount();
+  const labels = { open: '未対応', progress: '対応中', done: '完了' };
+  toast(labels[r.status] + 'に変更');
+}
+
+function deleteRecord(id) {
+  if (!confirm('この記録を削除しますか？')) return;
+  records = records.filter(r => r.id !== id);
+  LS.set('records', records);
+  renderList(); updateCount();
+  toast('削除しました');
+}
+
+// 詳細表示
+function showDetail(id) {
+  const r = records.find(r => r.id === id);
+  if (!r) return;
+  const sevLabel = { high: '重大', mid: '注意', low: '軽微' };
+  const statusLabel = { open: '未対応', progress: '対応中', done: '完了' };
+
+  document.getElementById('modalContent').innerHTML = `
+    <button class="close-btn" onclick="document.getElementById('modalBg').classList.remove('show')">✕</button>
+    <h3>${r.title}</h3>
+    <div style="margin-bottom:12px;">
+      <span class="sev-dot ${r.severity}"></span>${sevLabel[r.severity]}
+      <span class="rec-cat" style="margin-left:8px;">${r.category}</span>
+      <span class="status-badge ${r.status}" style="margin-left:8px;">${statusLabel[r.status]}</span>
+    </div>
+    <div style="font-size:13px; color:var(--text2); margin-bottom:8px;">${r.date}${r.handler ? ' / 対応: '+r.handler : ''}</div>
+    ${r.detail ? `<div class="card"><h2>発生状況</h2><p style="font-size:14px; white-space:pre-line;">${r.detail}</p></div>` : ''}
+    ${r.action ? `<div class="card"><h2>対応内容</h2><p style="font-size:14px; white-space:pre-line;">${r.action}</p></div>` : ''}
+    ${r.cause ? `<div class="card"><h2>原因分析</h2><p style="font-size:14px; white-space:pre-line;">${r.cause}</p></div>` : ''}
+    ${r.prevention ? `<div class="prevention"><strong>再発防止策：</strong><br>${r.prevention}</div>` : ''}
+  `;
+  document.getElementById('modalBg').classList.add('show');
+}
+function closeModal(e) { if (e.target === e.currentTarget) e.currentTarget.classList.remove('show'); }
+
+// 一覧描画
+function renderList() {
+  let filtered = records;
+  if (currentFilter !== 'all') filtered = records.filter(r => r.status === currentFilter);
+
+  const list = document.getElementById('recordList');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty">${currentFilter === 'all' ? '記録はまだありません' : '該当する記録はありません'}</div>`;
+    return;
+  }
+
+  const sevLabel = { high: '重大', mid: '注意', low: '軽微' };
+  const statusLabel = { open: '未対応', progress: '対応中', done: '完了' };
+
+  list.innerHTML = filtered.map(r => `
+    <div class="record-item">
+      <div class="rec-header">
+        <span class="sev-dot ${r.severity}"></span>
+        <span class="rec-title" onclick="showDetail(${r.id})" style="cursor:pointer;">${r.title}</span>
+        <span class="rec-cat">${r.category}</span>
+        <span class="status-badge ${r.status}">${statusLabel[r.status]}</span>
+      </div>
+      ${r.detail ? `<div class="rec-body">${r.detail}</div>` : ''}
+      <div class="rec-meta">${r.date}${r.handler ? ' / '+r.handler : ''}</div>
+      <div class="rec-actions">
+        <button class="btn btn-outline btn-sm" onclick="showDetail(${r.id})">詳細</button>
+        <button class="btn btn-outline btn-sm" onclick="cycleStatus(${r.id})">状態変更</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteRecord(${r.id})">削除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// 集計
+function renderStats() {
+  const total = records.length;
+  const open = records.filter(r => r.status === 'open').length;
+  const done = records.filter(r => r.status === 'done').length;
+
+  document.getElementById('statTiles').innerHTML = `
+    <div class="stat-tile"><div class="num">${total}</div><div class="lbl">総件数</div></div>
+    <div class="stat-tile"><div class="num" style="color:var(--red)">${open}</div><div class="lbl">未対応</div></div>
+    <div class="stat-tile"><div class="num" style="color:var(--green)">${done}</div><div class="lbl">完了</div></div>
+  `;
+
+  // 分類別
+  const catCount = {};
+  categories.forEach(c => catCount[c] = 0);
+  records.forEach(r => { catCount[r.category] = (catCount[r.category] || 0) + 1; });
+  const maxCat = Math.max(1, ...Object.values(catCount));
+  document.getElementById('catStats').innerHTML = Object.entries(catCount)
+    .filter(([,v]) => v > 0)
+    .sort((a,b) => b[1]-a[1])
+    .map(([k,v]) => `
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <span style="width:80px; font-size:13px; text-align:right;">${k}</span>
+        <div style="flex:1; height:20px; background:#f3f4f6; border-radius:4px; overflow:hidden;">
+          <div style="height:100%; width:${v/maxCat*100}%; background:var(--accent); border-radius:4px;"></div>
+        </div>
+        <span style="width:30px; font-size:13px; font-weight:600;">${v}</span>
+      </div>
+    `).join('') || '<div class="empty">データなし</div>';
+
+  // 月別
+  const monthCount = {};
+  records.forEach(r => {
+    const m = r.date.slice(0,7);
+    monthCount[m] = (monthCount[m] || 0) + 1;
+  });
+  const months = Object.keys(monthCount).sort();
+  const maxM = Math.max(1, ...Object.values(monthCount));
+  document.getElementById('monthStats').innerHTML = months.length ? months.map(m => `
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+      <span style="width:70px; font-size:13px; text-align:right;">${m}</span>
+      <div style="flex:1; height:20px; background:#f3f4f6; border-radius:4px; overflow:hidden;">
+        <div style="height:100%; width:${monthCount[m]/maxM*100}%; background:var(--accent); border-radius:4px;"></div>
+      </div>
+      <span style="width:30px; font-size:13px; font-weight:600;">${monthCount[m]}</span>
+    </div>
+  `).join('') : '<div class="empty">データなし</div>';
+}
+
+// カテゴリ編集
+function renderCatEditor() {
+  document.getElementById('catEditor').innerHTML = categories.map((c,i) => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <span>${c}</span>
+      <button class="btn btn-danger btn-sm" onclick="removeCategory(${i})">削除</button>
+    </div>
+  `).join('');
+}
+function addCategory() {
+  const name = document.getElementById('newCat').value.trim();
+  if (!name || categories.includes(name)) { toast(name ? '既に存在します' : '名前を入力'); return; }
+  categories.push(name);
+  LS.set('cats', categories);
+  document.getElementById('newCat').value = '';
+  renderCatEditor(); renderCatButtons();
+  toast('追加しました');
+}
+function removeCategory(i) {
+  if (categories.length <= 1) { toast('最低1つ必要です'); return; }
+  categories.splice(i, 1);
+  LS.set('cats', categories);
+  if (!categories.includes(selectedCat)) selectedCat = categories[0];
+  renderCatEditor(); renderCatButtons();
+  toast('削除しました');
+}
+
+// CSV
+function exportCSV() {
+  if (!records.length) { toast('データがありません'); return; }
+  const header = '日付,分類,重大度,件名,発生状況,対応者,対応内容,原因分析,再発防止策,状態';
+  const sevL = { high:'重大', mid:'注意', low:'軽微' };
+  const stL = { open:'未対応', progress:'対応中', done:'完了' };
+  const esc = s => '"' + (s||'').replace(/"/g,'""') + '"';
+  const rows = records.map(r =>
+    [r.date, r.category, sevL[r.severity], esc(r.title), esc(r.detail), r.handler, esc(r.action), esc(r.cause), esc(r.prevention), stL[r.status]].join(',')
+  );
+  const blob = new Blob(['﻿' + header + '\n' + rows.join('\n')], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = '対応記録.csv'; a.click();
+  toast('CSVを出力しました');
+}
+
+function clearAll() {
+  if (!confirm('すべてのデータを削除します。\n本当に削除しますか？')) return;
+  records = []; LS.set('records', records);
+  renderList(); updateCount();
+  toast('削除しました');
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,366 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>申し送りノート</title>
+<style>
+  :root {
+    --bg: #f5f5f0;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --text2: #666;
+    --accent: #7c3aed;
+    --accent-light: #f3f0ff;
+    --border: #e5e3de;
+    --green: #059669;
+    --green-light: #d1fae5;
+    --red: #dc2626;
+    --orange: #ea580c;
+    --orange-light: #fff7ed;
+    --blue: #2563eb;
+    --blue-light: #e8f0fe;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh;
+  }
+  .header {
+    background: linear-gradient(135deg, var(--accent), #5b21b6);
+    color: #fff; padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header h1 { font-size: 18px; font-weight: 700; }
+  .header .sub { font-size: 13px; opacity: 0.85; }
+
+  .tabs {
+    display: flex; background: var(--card); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .tab {
+    flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 600;
+    color: var(--text2); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .page { display: none; padding: 16px; max-width: 640px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  .card {
+    background: var(--card); border-radius: var(--radius); padding: 16px;
+    margin-bottom: 12px; border: 1px solid var(--border);
+  }
+  .card h2 { font-size: 15px; margin-bottom: 12px; color: var(--text2); }
+
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 4px; }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 15px; font-family: inherit; background: var(--bg);
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light);
+  }
+  .form-group textarea { min-height: 100px; resize: vertical; }
+
+  /* 優先度 */
+  .priority-row { display: flex; gap: 6px; }
+  .priority-btn {
+    flex: 1; padding: 8px; border: 2px solid var(--border); border-radius: 8px;
+    background: var(--card); font-size: 13px; font-weight: 600;
+    cursor: pointer; text-align: center; transition: all 0.15s;
+  }
+  .priority-btn.high { color: var(--red); }
+  .priority-btn.normal { color: var(--blue); }
+  .priority-btn.low { color: var(--text2); }
+  .priority-btn.active.high { background: #fee2e2; border-color: var(--red); }
+  .priority-btn.active.normal { background: var(--blue-light); border-color: var(--blue); }
+  .priority-btn.active.low { background: #f3f4f6; border-color: #9ca3af; }
+
+  /* ステータス */
+  .status-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 12px; font-weight: 600;
+  }
+  .status-badge.open { background: var(--orange-light); color: var(--orange); }
+  .status-badge.done { background: var(--green-light); color: var(--green); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 12px 20px; border: none; border-radius: 8px; font-size: 15px;
+    font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .btn-danger { background: transparent; color: var(--red); border: 1px solid var(--red); }
+  .btn-sm { padding: 8px 14px; font-size: 13px; }
+
+  /* 一覧 */
+  .note-item {
+    padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+  }
+  .note-item:last-child { border-bottom: none; }
+  .note-item:hover { background: #fafaf5; }
+  .note-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+  }
+  .note-priority {
+    width: 6px; height: 6px; border-radius: 50%;
+  }
+  .note-priority.high { background: var(--red); }
+  .note-priority.normal { background: var(--blue); }
+  .note-priority.low { background: #ccc; }
+  .note-title { font-weight: 600; font-size: 15px; flex: 1; }
+  .note-body { font-size: 13px; color: var(--text2); margin-left: 14px; white-space: pre-line; max-height: 60px; overflow: hidden; }
+  .note-meta { font-size: 12px; color: #aaa; margin-left: 14px; margin-top: 4px; }
+  .note-actions { display: flex; gap: 6px; margin-left: 14px; margin-top: 6px; }
+
+  .filter-row { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 6px 14px; border: 1px solid var(--border); border-radius: 16px;
+    background: var(--card); font-size: 13px; cursor: pointer; font-weight: 500;
+  }
+  .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .empty { text-align: center; padding: 32px; color: var(--text2); font-size: 14px; }
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: #333; color: #fff; padding: 10px 24px; border-radius: 20px;
+    font-size: 14px; z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>申し送りノート</h1>
+  <div class="sub" id="headerCount"></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('list')">一覧</div>
+  <div class="tab" onclick="switchTab('add')">新規</div>
+  <div class="tab" onclick="switchTab('settings')">設定</div>
+</div>
+
+<!-- 一覧 -->
+<div class="page active" id="page-list">
+  <div class="filter-row">
+    <button class="filter-btn active" data-f="all" onclick="setFilter('all')">すべて</button>
+    <button class="filter-btn" data-f="open" onclick="setFilter('open')">未対応</button>
+    <button class="filter-btn" data-f="done" onclick="setFilter('done')">対応済</button>
+    <button class="filter-btn" data-f="high" onclick="setFilter('high')">至急</button>
+  </div>
+  <div id="noteList"></div>
+</div>
+
+<!-- 新規作成 -->
+<div class="page" id="page-add">
+  <div class="card">
+    <h2>申し送り事項を記録</h2>
+    <div class="form-group">
+      <label>日付</label>
+      <input type="date" id="inDate">
+    </div>
+    <div class="form-group">
+      <label>件名</label>
+      <input type="text" id="inTitle" placeholder="何についての連絡？">
+    </div>
+    <div class="form-group">
+      <label>優先度</label>
+      <div class="priority-row" id="priorityRow">
+        <div class="priority-btn high" data-p="high" onclick="setPriority('high')">至急</div>
+        <div class="priority-btn normal active" data-p="normal" onclick="setPriority('normal')">通常</div>
+        <div class="priority-btn low" data-p="low" onclick="setPriority('low')">参考</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>内容</label>
+      <textarea id="inBody" placeholder="引き継ぎ事項・連絡事項・対応依頼など"></textarea>
+    </div>
+    <div class="form-group">
+      <label>担当/宛先（任意）</label>
+      <input type="text" id="inTo" placeholder="例：田中さん">
+    </div>
+    <button class="btn btn-primary" onclick="addNote()">記録する</button>
+  </div>
+</div>
+
+<!-- 設定 -->
+<div class="page" id="page-settings">
+  <div class="card">
+    <h2>データ管理</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);">
+      <span>全データCSV出力</span>
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">出力</button>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0;">
+      <span style="color:var(--red)">全データ削除</span>
+      <button class="btn btn-danger btn-sm" onclick="clearAll()">削除</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>このアプリについて</h2>
+    <p style="font-size:13px; color:var(--text2); line-height:1.8;">
+      シフト交代時の引き継ぎ、連絡事項、対応依頼の記録に。<br>
+      データはこのブラウザ内に保存されます。<br>
+      定期的にCSVでバックアップしてください。
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem('ho_'+k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('ho_'+k, JSON.stringify(v)); } catch {} }
+};
+
+let notes = LS.get('notes', []);
+let currentFilter = 'all';
+
+function init() {
+  document.getElementById('inDate').value = todayStr();
+  renderList();
+  updateCount();
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const pages = ['list','add','settings'];
+    t.classList.toggle('active', pages[i] === name);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+}
+
+function setPriority(p) {
+  document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.priority-btn[data-p="${p}"]`).classList.add('active');
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.f === f));
+  renderList();
+}
+
+function updateCount() {
+  const open = notes.filter(n => n.status === 'open').length;
+  document.getElementById('headerCount').textContent = open ? '未対応: ' + open + '件' : 'すべて対応済み';
+}
+
+function addNote() {
+  const date = document.getElementById('inDate').value;
+  const title = document.getElementById('inTitle').value.trim();
+  const body = document.getElementById('inBody').value.trim();
+  const to = document.getElementById('inTo').value.trim();
+  const pBtn = document.querySelector('.priority-btn.active');
+  const priority = pBtn ? pBtn.dataset.p : 'normal';
+
+  if (!title) { toast('件名を入力してください'); return; }
+
+  notes.unshift({
+    id: Date.now(), date, title, body, to, priority,
+    status: 'open', created: todayStr()
+  });
+  LS.set('notes', notes);
+
+  document.getElementById('inTitle').value = '';
+  document.getElementById('inBody').value = '';
+  document.getElementById('inTo').value = '';
+  setPriority('normal');
+
+  renderList(); updateCount();
+  switchTab('list');
+  toast('記録しました');
+}
+
+function toggleStatus(id) {
+  const n = notes.find(n => n.id === id);
+  if (!n) return;
+  n.status = n.status === 'open' ? 'done' : 'open';
+  LS.set('notes', notes);
+  renderList(); updateCount();
+  toast(n.status === 'done' ? '対応済みにしました' : '未対応に戻しました');
+}
+
+function deleteNote(id) {
+  if (!confirm('この申し送りを削除しますか？')) return;
+  notes = notes.filter(n => n.id !== id);
+  LS.set('notes', notes);
+  renderList(); updateCount();
+  toast('削除しました');
+}
+
+function renderList() {
+  let filtered = notes;
+  if (currentFilter === 'open') filtered = notes.filter(n => n.status === 'open');
+  else if (currentFilter === 'done') filtered = notes.filter(n => n.status === 'done');
+  else if (currentFilter === 'high') filtered = notes.filter(n => n.priority === 'high' && n.status === 'open');
+
+  const list = document.getElementById('noteList');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty">${currentFilter === 'all' ? '申し送りはまだありません' : '該当する申し送りはありません'}</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(n => `
+    <div class="note-item">
+      <div class="note-header">
+        <div class="note-priority ${n.priority}"></div>
+        <div class="note-title">${n.title}</div>
+        <span class="status-badge ${n.status}">${n.status === 'open' ? '未対応' : '対応済'}</span>
+      </div>
+      ${n.body ? `<div class="note-body">${n.body}</div>` : ''}
+      <div class="note-meta">
+        ${n.date} ${n.to ? '→ ' + n.to : ''}
+      </div>
+      <div class="note-actions">
+        <button class="btn btn-outline btn-sm" onclick="toggleStatus(${n.id})">${n.status === 'open' ? '対応済みにする' : '未対応に戻す'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteNote(${n.id})">削除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// CSV
+function exportCSV() {
+  if (!notes.length) { toast('データがありません'); return; }
+  const header = '日付,件名,優先度,内容,宛先,状態';
+  const rows = notes.map(n =>
+    [n.date, '"'+n.title+'"', n.priority==='high'?'至急':n.priority==='low'?'参考':'通常', '"'+(n.body||'')+'"', n.to||'', n.status==='done'?'対応済':'未対応'].join(',')
+  );
+  const blob = new Blob(['﻿' + header + '\n' + rows.join('\n')], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = '申し送り記録.csv'; a.click();
+  toast('CSVを出力しました');
+}
+
+function clearAll() {
+  if (!confirm('すべてのデータを削除します。\n本当に削除しますか？')) return;
+  notes = []; LS.set('notes', notes);
+  renderList(); updateCount();
+  toast('削除しました');
+}
+
+init();
+</script>
+</body>
+</html>
