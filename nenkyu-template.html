@@ -1,0 +1,200 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>年次有給休暇管理簿(法定付与)</title>
+<style>
+:root{--bg:#f6f7f5;--panel:#fff;--ink:#1d2a2f;--sub:#5d6b70;--line:#d9dedb;--accent:#1f5f6b;--accent-ink:#fff;--warn:#b4531a;--bad:#b3261e;--ok:#2d6a4f;--head:#e9eeec}
+@media (prefers-color-scheme:dark){:root{--bg:#161c1e;--panel:#1f272a;--ink:#e6ecea;--sub:#9aa9ad;--line:#33403f;--accent:#6bb8c4;--accent-ink:#0e1a1c;--warn:#e59a63;--bad:#f2867f;--ok:#7fcf9f;--head:#27312f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 "Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif}
+header,main{max-width:1280px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px}
+.note{color:var(--sub);font-size:12.5px;margin:0}
+.bar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;margin:14px 0}
+label.f{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--sub)}
+input,select,button{font:inherit;color:var(--ink)}
+input[type=text],input[type=date],input[type=number],select{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 8px}
+input:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.x{border:none;background:none;color:var(--sub);padding:2px 6px}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:1100px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{background:var(--head);font-weight:600;font-size:12px;text-align:center;position:sticky;top:0}
+td.l,th.l{text-align:left}
+td input[type=text],td input[type=date],td input[type=number]{width:100%;padding:3px 6px}
+td input.n{width:64px;text-align:right}
+td input.d{width:136px}
+td input.name{width:120px}
+td input.no{width:64px}
+tr.sel td{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.tag{display:inline-block;padding:0 8px;border-radius:10px;font-size:12px;border:1px solid var(--line)}
+.tag.done{color:var(--ok);border-color:var(--ok)}
+.neg{color:var(--bad);font-weight:600}
+.warn{color:var(--warn);font-weight:600}
+.big{font-weight:600}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-top:16px}
+.panel h2{font-size:15px;margin:0 0 8px}
+.rec{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;padding:0;list-style:none}
+.rec li{border:1px solid var(--line);border-radius:6px;padding:2px 4px 2px 10px}
+.rec li.post{border-color:var(--accent)}
+.grid7{display:flex;flex-wrap:wrap;gap:10px}
+details summary{cursor:pointer;color:var(--sub)}
+.empty{padding:28px;text-align:center;color:var(--sub)}
+</style>
+</head>
+<body>
+<header>
+  <h1>年次有給休暇管理簿(法定付与)</h1>
+  <p class="note">入社6か月後に初回付与、以降1年ごとに付与する方式です。データはこのブラウザ内にだけ保存され、外部には送信されません。端末を変える場合はJSONで書き出してください。</p>
+  <div class="bar">
+    <label class="f">起算日(この日から1年分を管理)<input type="date" id="base"></label>
+    <label class="f">基準日(本日)<input type="date" id="today"></label>
+    <button class="pri" id="add">社員を追加</button>
+    <button id="exp">JSONで保存</button>
+    <button id="imp">JSONを読み込む</button>
+    <button id="csv">CSV出力</button>
+    <button id="roll">翌年度へ繰り越す</button>
+    <input type="file" id="file" accept=".json,application/json" hidden>
+  </div>
+  <details>
+    <summary>付与日数の設定(勤続年数ごと)</summary>
+    <div class="grid7" id="table" style="margin-top:8px"></div>
+  </details>
+</header>
+<main>
+  <div class="wrap"><table>
+    <thead><tr>
+      <th class="l">社員番号</th><th class="l">氏名</th><th>入社日</th><th>今年の付与日</th><th>勤続年数</th><th>対象外</th>
+      <th>①前年繰越<br>(前々年分)</th><th>②前年繰越<br>(前年分)</th><th>③今年付与</th><th>付与</th><th>④今年取得</th><th>⑤現在残日数</th>
+      <th>翌年繰越<br>(前年付与分)</th><th>翌年繰越<br>(今年付与分)</th><th>付与後の取得<br>(年5日目安)</th><th></th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+  <div id="empty" class="empty" hidden>まだ社員がいません。「社員を追加」から入社日つきで登録してください。</div>
+  <section class="panel" id="detail" hidden></section>
+  <p class="note" style="margin-top:14px">計算の考え方:付与日の前は①→②の順に消化し、付与日が来ると①の残りは時効で消えます。付与日後は②の残り→今年付与分の順に消化します。時間単位年休・比例付与・分割付与には対応していません。</p>
+</main>
+<script>
+const KEY='nenkyu-kanri-v1';
+const DEF={base:'',today:'',table:[10,11,12,14,16,18,20],emps:[]};
+let S=load(); let sel=null;
+const $=id=>document.getElementById(id);
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const parse=s=>{if(!s)return null;const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c)};
+function addM(d,m){const t=new Date(d.getFullYear(),d.getMonth()+m,1);const last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();t.setDate(Math.min(d.getDate(),last));return t}
+const fmt=n=>Number.isInteger(n)?String(n):n.toFixed(1);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.emps)return Object.assign({},DEF,s)}catch(e){}
+  const t=new Date();return Object.assign({},DEF,{base:t.getFullYear()+'-01-01',today:iso(t),table:[...DEF.table],emps:[]})}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+function calc(e){
+  const hire=parse(e.hire),base=parse(S.base),today=parse(S.today)||new Date();
+  const r={ok:false};if(!hire||!base)return r;
+  const end=addM(base,12),first=addM(hire,6);
+  let k=-1;for(let i=0;i<80;i++){const g=addM(first,12*i);if(g>=end)break;if(g>=base){k=i;break}}
+  const gd=k>=0?addM(first,12*k):null;
+  const gdays=gd&&!e.excluded?S.table[Math.min(k,S.table.length-1)]:0;
+  const granted=!!gd&&today>=gd;
+  let pre=0,post=0,all=0;
+  (e.leaves||[]).forEach(l=>{const d=parse(l.date);if(!d||d<base||d>=end)return;const n=Number(l.days)||0;all+=n;
+    if(granted&&d>=gd)post+=n;else pre+=n});
+  const c1=Number(e.c1)||0,c2=Number(e.c2)||0;
+  const t1=Math.min(pre,c1),t2=pre-t1;           // ① → ② の順に消化(超過分は②に積む)
+  const r1=c1-t1,r2=c2-t2;
+  let carry2,carryNew,remain;
+  if(granted){const u2=Math.min(post,Math.max(r2,0));const un=post-u2;
+    carry2=r2-u2;carryNew=gdays-un;remain=carry2+carryNew;if(carry2<0){carryNew+=carry2;carry2=0}}
+  else{carry2=r2;carryNew=0;remain=r1+r2}
+  return {ok:true,gd,k,gdays,granted,taken:granted?pre+post:pre,remain,carry2,carryNew,post,
+    need5:granted&&gdays>=10,hasGrant:!!gd}
+}
+
+function renderTable(){
+  $('table').innerHTML=S.table.map((v,i)=>`<label class="f">${i}年度${i==6?'以降':''}<input type="number" class="n" min="0" data-t="${i}" value="${v}"></label>`).join('');
+}
+function render(){
+  $('base').value=S.base;$('today').value=S.today;
+  $('empty').hidden=S.emps.length>0;
+  $('rows').innerHTML=S.emps.map((e,i)=>{
+    const c=calc(e);
+    const cell=(f,cls,type='text')=>`<td class="l"><input class="${cls}" type="${type}" data-i="${i}" data-f="${f}" value="${esc(e[f])}"></td>`;
+    let tail;
+    if(!c.ok)tail='<td colspan="9" class="l" style="color:var(--sub)">入社日を入力してください</td>';
+    else{
+      const five=c.need5?(c.post>=5?`<span>${fmt(c.post)} / 5</span>`:`<span class="warn">${fmt(c.post)} / 5</span>`):'-';
+      tail=`<td>${c.gd?iso(c.gd).replace(/-/g,'/'):'-'}</td><td>${c.k>=0?c.k+0.5:'-'}</td>
+      <td style="text-align:center"><input type="checkbox" data-i="${i}" data-f="excluded" ${e.excluded?'checked':''} aria-label="対象外"></td>`;
+    }
+    const lead=cell('no','no')+cell('name','name')+`<td class="l"><input class="d" type="date" data-i="${i}" data-f="hire" value="${esc(e.hire)}"></td>`;
+    if(!c.ok)return `<tr data-row="${i}" class="${sel===i?'sel':''}">${lead}${tail}<td colspan="3"></td><td><button class="x" data-del="${i}" aria-label="削除">削除</button></td></tr>`;
+    return `<tr data-row="${i}" class="${sel===i?'sel':''}">${lead}${tail}
+      <td><input class="n" type="number" step="0.5" data-i="${i}" data-f="c1" value="${esc(e.c1)}"></td>
+      <td><input class="n" type="number" step="0.5" data-i="${i}" data-f="c2" value="${esc(e.c2)}"></td>
+      <td>${c.hasGrant?fmt(c.gdays):0}</td>
+      <td><span class="tag ${c.granted?'done':''}">${c.granted?'済':'未'}</span></td>
+      <td>${fmt(c.taken)}</td>
+      <td class="big ${c.remain<0?'neg':''}">${fmt(c.remain)}</td>
+      <td>${fmt(c.carry2)}</td><td>${fmt(c.carryNew)}</td><td>${five}</td>
+      <td><button data-open="${i}">取得日</button><button class="x" data-del="${i}" aria-label="削除">削除</button></td></tr>`;
+  }).join('');
+  renderDetail();
+}
+function renderDetail(){
+  const p=$('detail');
+  if(sel==null||!S.emps[sel]){p.hidden=true;return}
+  const e=S.emps[sel];e.leaves=e.leaves||[];
+  const c=calc(e);
+  const sorted=[...e.leaves].map((l,i)=>({...l,i})).sort((a,b)=>a.date<b.date?-1:1);
+  p.hidden=false;
+  p.innerHTML=`<h2>${esc(e.name||'(氏名未入力)')} の取得日</h2>
+  <div class="bar" style="margin:0"><label class="f">取得日<input type="date" id="ld"></label>
+  <label class="f">日数<select id="ln"><option value="1">1日</option><option value="0.5">半日(0.5)</option></select></label>
+  <button class="pri" id="la">追加</button><button id="lc">閉じる</button></div>
+  <ul class="rec">${sorted.map(l=>{const post=c.granted&&c.gd&&parse(l.date)>=c.gd;
+    return `<li class="${post?'post':''}">${l.date.replace(/-/g,'/')} ・ ${l.days}日<button class="x" data-ld="${l.i}" aria-label="削除">×</button></li>`}).join('')||'<li style="border:none;color:var(--sub)">まだ登録がありません</li>'}</ul>
+  <p class="note" style="margin-top:8px">枠線が色付きのものは今年の付与日以降の取得です。起算日からの1年の範囲外の日付は集計されません。</p>`;
+}
+
+document.addEventListener('input',ev=>{
+  const t=ev.target;
+  if(t.id==='base'){S.base=t.value;save();render();return}
+  if(t.id==='today'){S.today=t.value;save();render();return}
+  if(t.dataset.t!=null){S.table[+t.dataset.t]=Number(t.value)||0;save();render();return}
+  if(t.dataset.f){const e=S.emps[+t.dataset.i];e[t.dataset.f]=t.type==='checkbox'?t.checked:t.value;save();
+    if(t.type==='checkbox'||t.dataset.f==='hire'||t.dataset.f==='c1'||t.dataset.f==='c2'){
+      const pos=[t.dataset.i,t.dataset.f];render();
+      const n=document.querySelector(`[data-i="${pos[0]}"][data-f="${pos[1]}"]`);if(n&&t.type!=='checkbox'){n.focus()}
+    }
+  }
+});
+document.addEventListener('click',ev=>{
+  const t=ev.target.closest('button');if(!t)return;
+  if(t.id==='add'){if(S.emps.length>=3){toast('デモ版は3名までです。製品版は無制限に登録できます。');return}S.emps.push({no:'',name:'',hire:'',c1:'',c2:'',excluded:false,leaves:[]});save();render();return}
+  if(t.dataset.del!=null){const e=S.emps[+t.dataset.del];if(confirm(`${e.name||'この行'}を削除しますか？`)){S.emps.splice(+t.dataset.del,1);sel=null;save();render()}return}
+  if(t.dataset.open!=null){sel=+t.dataset.open;render();$('detail').scrollIntoView({behavior:'smooth',block:'nearest'});return}
+  if(t.id==='lc'){sel=null;render();return}
+  if(t.id==='la'){const d=$('ld').value;if(!d){$('ld').focus();return}
+    S.emps[sel].leaves.push({date:d,days:Number($('ln').value)});save();render();return}
+  if(t.dataset.ld!=null){S.emps[sel].leaves.splice(+t.dataset.ld,1);save();render();return}
+  if(t.id==='exp'){toast('JSON保存は製品版で使えます');return}
+  if(t.id==='imp'){$('file').click();return}
+  if(t.id==='csv'){toast('CSV出力は製品版で使えます');return}
+  if(t.id==='roll'){toast('翌年度繰越は製品版で使えます');return}
+});
+$('file').addEventListener('change',ev=>{
+  const f=ev.target.files[0];if(!f)return;
+  f.text().then(x=>{try{const j=JSON.parse(x);if(!Array.isArray(j.emps))throw 0;S=Object.assign({},DEF,j);sel=null;save();renderTable();render()}
+    catch(e){alert('読み込めませんでした。このアプリで保存したJSONファイルを選んでください。')}});
+  ev.target.value='';
+});
+function dl(text,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function toast(m){const d=document.createElement('div');d.textContent=m;Object.assign(d.style,{position:'fixed',bottom:'20px',left:'50%',transform:'translateX(-50%)',background:'var(--ink)',color:'var(--bg)',padding:'10px 20px',borderRadius:'8px',zIndex:'9999',fontSize:'14px'});document.body.appendChild(d);setTimeout(()=>d.remove(),2500)}
+renderTable();render();
+</script>
+</body>
+</html>
