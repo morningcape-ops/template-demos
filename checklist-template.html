@@ -456,6 +456,7 @@ function addSection() {
   const name = document.getElementById('newSectionName').value.trim();
   const items = document.getElementById('newSectionItems').value.trim().split('\n').map(s => s.trim()).filter(Boolean);
   if (!name || !items.length) { toast('セクション名と項目を入力してください'); return; }
+  if (template.length >= 3) { toast('⚠ デモ版の上限（3セクション）です。製品版でご利用ください'); return; }
 
   template.push({ section: name, items });
   LS.set('template', template);
@@ -518,6 +519,7 @@ function deleteSection(i) {
 
 // CSV出力
 function exportCSV() {
+  toast('📦 エクスポートは製品版で利用できます'); return;
   const dates = Object.keys(records).sort();
   if (!dates.length) { toast('データがありません'); return; }
 

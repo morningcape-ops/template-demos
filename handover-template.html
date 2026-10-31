@@ -275,6 +275,7 @@ function addNote() {
   const priority = pBtn ? pBtn.dataset.p : 'normal';
 
   if (!title) { toast('件名を入力してください'); return; }
+  if (notes.length >= 5) { toast('⚠ デモ版の上限（5件）です。製品版でご利用ください'); return; }
 
   notes.unshift({
     id: Date.now(), date, title, body, to, priority,
@@ -342,6 +343,7 @@ function renderList() {
 
 // CSV
 function exportCSV() {
+  toast('📦 エクスポートは製品版で利用できます'); return;
   if (!notes.length) { toast('データがありません'); return; }
   const header = '日付,件名,優先度,内容,宛先,状態';
   const rows = notes.map(n =>

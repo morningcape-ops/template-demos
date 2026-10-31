@@ -711,7 +711,7 @@ function saveForm() {
   const due = document.getElementById('f_due').value;
   const priority = document.getElementById('f_pri').value || 'mid';
   if (editId != null) { items = items.map(i => String(i.id)!==String(editId)?i:{...i,content,requester,assignee,due,priority,updatedAt:nowFull()}); }
-  else { items.push({id:String(Date.now())+Math.random().toString(36).slice(2,6),content,requester,assignee,due,priority,done:false,createdAt:nowFull(),remarks:[]}); }
+  else { if (items.length >= 10) { toast('⚠ デモ版の上限（10件）です。製品版でご利用ください'); closeForm(); return; } items.push({id:String(Date.now())+Math.random().toString(36).slice(2,6),content,requester,assignee,due,priority,done:false,createdAt:nowFull(),remarks:[]}); }
   save(); closeForm(); renderTasks();
 }
 
@@ -743,6 +743,7 @@ function renderMemos() {
 function addMemo() {
   const inp = document.getElementById('memoInput'); if (!inp) return;
   const text = inp.value.trim(); if (!text) return;
+  if (memos.length >= 5) { toast('⚠ デモ版の上限（メモ5件）です。製品版でご利用ください'); return; }
   memos.unshift({id:String(Date.now())+Math.random().toString(36).slice(2,6),text,done:false,color:memoColor,created:todayStr(),createdAt:nowFull()});
   save(); inp.value=''; renderMemos(); setTimeout(()=>{document.getElementById('memoInput')?.focus();},30);
 }
@@ -801,13 +802,14 @@ function saveWorklog() {
   const content=document.getElementById('wf_content').value.trim(), notes=document.getElementById('wf_notes').value.trim();
   if(!content){toast('作業内容を入力してください');return;}
   if(editWlId!=null){workLogs=workLogs.map(w=>String(w.id)!==String(editWlId)?w:{...w,date,time,content,notes,updatedAt:nowFull()});}
-  else{workLogs.push({id:Date.now(),date,time,content,notes,createdAt:nowFull()});}
+  else{ if(workLogs.length>=10){toast('⚠ デモ版の上限（記録10件）です。製品版でご利用ください');hideWlForm();return;} workLogs.push({id:Date.now(),date,time,content,notes,createdAt:nowFull()});}
   save(); hideWlForm(); renderWorkLogs();
 }
 function editWorklog(id) { const wl=workLogs.find(w=>String(w.id)===String(id)); if(wl) showWlForm(wl); }
 function deleteWorklog(id) { if(!confirm('この記録を削除しますか？'))return; workLogs=workLogs.filter(w=>String(w.id)!==String(id)); save(); renderWorkLogs(); }
 
 function exportJSON() {
+  toast('📦 エクスポートは製品版で利用できます'); return;
   const data={version:'1.0',exportedAt:nowFull(),items,memos,workLogs};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8;'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
@@ -815,6 +817,7 @@ function exportJSON() {
   toast('JSONを保存しました');
 }
 function exportCSV() {
+  toast('📦 エクスポートは製品版で利用できます'); return;
   const BOM='﻿', header='タスク,優先度,期限,依頼者,担当,状態,作成日,完了日';
   const rows=items.map(it=>[it.content,PRI_LABEL[it.priority||'mid'],it.due||'',it.requester||'',it.assignee||'',it.done?'完了':'未完了',it.createdAt||'',it.doneAt||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
   const blob=new Blob([BOM+header+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8;'});
@@ -823,6 +826,7 @@ function exportCSV() {
   toast('CSVを保存しました');
 }
 function importJSON(input) {
+  toast('📂 インポートは製品版で利用できます'); return;
   const file=input.files[0]; if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{

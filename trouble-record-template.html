@@ -374,6 +374,7 @@ function selectCat(c) {
 function addRecord() {
   const title = document.getElementById('inTitle').value.trim();
   if (!title) { toast('件名を入力してください'); return; }
+  if (records.length >= 5) { toast('⚠ デモ版の上限（5件）です。製品版でご利用ください'); return; }
 
   const sevBtn = document.querySelector('.sev-btn.active');
   records.unshift({
@@ -562,6 +563,7 @@ function removeCategory(i) {
 
 // CSV
 function exportCSV() {
+  toast('📦 エクスポートは製品版で利用できます'); return;
   if (!records.length) { toast('データがありません'); return; }
   const header = '日付,分類,重大度,件名,発生状況,対応者,対応内容,原因分析,再発防止策,状態';
   const sevL = { high:'重大', mid:'注意', low:'軽微' };
