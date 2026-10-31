@@ -1,0 +1,297 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>スケジュール管理</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap">
+<style>
+/* ★差し替え：アプリ名・カラー */
+:root {
+  --accent: #e11d48; --accent-hover: #be123c;
+  --accent-soft: rgba(225,29,72,.08); --accent-glow: rgba(225,29,72,.15);
+  --bg: #faf5f6; --card: #ffffff; --card-hover: #fefafb;
+  --ink: #1e293b; --sub: #64748b; --muted: #94a3b8;
+  --line: #e2e8f0; --line-soft: #f1f5f9;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.03);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
+  --radius: 14px; --radius-sm: 10px;
+  --font: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1013; --card: #261a1e; --card-hover: #302228;
+    --ink: #f0e6ea; --sub: #a8909a; --muted: #6e5a63;
+    --line: #3d2e34; --line-soft: #2e2127;
+    --accent: #fb7185; --accent-hover: #f43f5e;
+    --accent-soft: rgba(251,113,133,.12); --accent-glow: rgba(251,113,133,.2);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.2);
+    --shadow-md: 0 4px 16px rgba(0,0,0,.25);
+    color-scheme: dark;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--ink); min-height: 100dvh; -webkit-font-smoothing: antialiased; }
+.header {
+  position: sticky; top: 0; z-index: 50;
+  background: linear-gradient(135deg, #be123c 0%, #e11d48 50%, #fb7185 100%);
+  color: #fff; padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.header h1 { font-size: 17px; font-weight: 700; letter-spacing: .02em; }
+.header-sub { font-size: 12px; opacity: .85; background: rgba(255,255,255,.15); padding: 4px 10px; border-radius: 20px; }
+.tabs {
+  display: flex; background: var(--card); border-bottom: 1px solid var(--line);
+  position: sticky; top: 53px; z-index: 40; padding: 0 8px; box-shadow: var(--shadow-sm);
+}
+.tab {
+  flex: 1; padding: 13px 0; text-align: center; font-size: 13px; font-weight: 500;
+  color: var(--sub); cursor: pointer; border-bottom: 2.5px solid transparent; transition: color .15s, border-color .15s;
+}
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.page { display: none; padding: 16px; max-width: 640px; margin: 0 auto; }
+.page.active { display: block; }
+
+/* Calendar */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cal-nav h2 { font-size: 17px; font-weight: 600; }
+.cal-nav button { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 50%; background: var(--card); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; border: 1px solid var(--line); }
+.cal-head { padding: 8px 0; text-align: center; font-size: 11px; font-weight: 600; color: var(--sub); background: var(--line-soft); }
+.cal-head:first-child { color: var(--accent); }
+.cal-head:last-child { color: #2563eb; }
+.cal-cell { min-height: 52px; padding: 4px; cursor: pointer; background: var(--card); border-top: 1px solid var(--line-soft); transition: background .1s; position: relative; }
+.cal-cell:hover { background: var(--card-hover); }
+.cal-cell.other { opacity: .35; }
+.cal-cell.today .cal-num { background: var(--accent); color: #fff; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+.cal-cell.sel { background: var(--accent-soft); }
+.cal-num { font-size: 12px; font-weight: 500; margin-bottom: 2px; }
+.cal-dot { display: flex; gap: 2px; flex-wrap: wrap; }
+.cal-dot span { width: 6px; height: 6px; border-radius: 50%; }
+
+/* Event list */
+.ev-date { font-size: 15px; font-weight: 600; margin: 16px 0 8px; }
+.ev-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 8px; box-shadow: var(--shadow-sm); }
+.ev-color { width: 4px; min-height: 28px; border-radius: 2px; flex: none; margin-top: 2px; }
+.ev-body { flex: 1; min-width: 0; }
+.ev-title { font-weight: 600; font-size: 14px; }
+.ev-time { font-size: 12px; color: var(--sub); }
+.ev-memo { font-size: 12px; color: var(--sub); margin-top: 2px; }
+.ev-actions { display: flex; gap: 4px; }
+.ev-actions button { padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); font-size: 11px; cursor: pointer; color: var(--sub); }
+.ev-actions button.del { color: var(--accent); }
+.empty-ev { text-align: center; color: var(--sub); padding: 24px; font-size: 14px; }
+
+/* Form */
+.form-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow-sm); margin-bottom: 12px; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--sub); margin-bottom: 4px; }
+.form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 15px; font-family: inherit; background: var(--card); color: var(--ink); }
+.form-group textarea { min-height: 60px; resize: vertical; }
+.color-row { display: flex; gap: 8px; }
+.color-btn { width: 32px; height: 32px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: border-color .15s; }
+.color-btn.active { border-color: var(--ink); }
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .2s; width: 100%; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); margin-top: 8px; }
+
+/* Settings */
+.setting-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.setting-item:last-child { border-bottom: none; }
+.setting-label { font-size: 14px; }
+.setting-sub { font-size: 12px; color: var(--sub); }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 20px; border-radius: 8px; z-index: 9999; font-size: 14px; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📅 スケジュール管理</h1>
+  <span class="header-sub" id="headerDate"></span>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('cal')">カレンダー</div>
+  <div class="tab" onclick="switchTab('add')">予定追加</div>
+  <div class="tab" onclick="switchTab('list')">一覧</div>
+  <div class="tab" onclick="switchTab('settings')">設定</div>
+</div>
+<div class="page active" id="page-cal"></div>
+<div class="page" id="page-add"></div>
+<div class="page" id="page-list"></div>
+<div class="page" id="page-settings"></div>
+<div class="toast" id="toast"></div>
+
+<script>const KEY='sc_';
+const COLORS=['#e11d48','#2563eb','#059669','#f59e0b','#7c3aed','#64748b'];
+let events=[], curYear, curMonth, selDate='', editId=null;
+const $=id=>document.getElementById(id);
+const iso=(y,m,d)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+function load(){try{events=JSON.parse(localStorage.getItem(KEY+'ev'))||[]}catch(e){events=[]}}
+function save(){try{localStorage.setItem(KEY+'ev',JSON.stringify(events))}catch(e){}}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['cal','add','list','settings'][i]===id));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id));
+  if(id==='cal')renderCal();
+  if(id==='add')renderForm();
+  if(id==='list')renderList();
+  if(id==='settings')renderSettings();
+}
+
+function renderCal(){
+  const now=new Date();
+  if(curYear==null){curYear=now.getFullYear();curMonth=now.getMonth()}
+  const todayStr=iso(now.getFullYear(),now.getMonth(),now.getDate());
+  const first=new Date(curYear,curMonth,1);
+  const startDay=first.getDay();
+  const daysInMonth=new Date(curYear,curMonth+1,0).getDate();
+  const prevDays=new Date(curYear,curMonth,0).getDate();
+
+  $('headerDate').textContent=`${curYear}年${curMonth+1}月`;
+
+  let html=`<div class="cal-nav">
+    <button onclick="navMonth(-1)">◀</button>
+    <h2>${curYear}年 ${curMonth+1}月</h2>
+    <button onclick="navMonth(1)">▶</button>
+  </div>
+  <div class="cal-grid">`;
+  ['日','月','火','水','木','金','土'].forEach(d=>html+=`<div class="cal-head">${d}</div>`);
+
+  for(let i=0;i<42;i++){
+    let day,month=curMonth,year=curYear,other=false;
+    if(i<startDay){day=prevDays-startDay+1+i;month--;other=true;if(month<0){month=11;year--}}
+    else if(i-startDay>=daysInMonth){day=i-startDay-daysInMonth+1;month++;other=true;if(month>11){month=0;year++}}
+    else{day=i-startDay+1}
+    const dateStr=iso(year,month,day);
+    const isToday=dateStr===todayStr;
+    const isSel=dateStr===selDate;
+    const dayEvents=events.filter(e=>e.date===dateStr);
+    const cls=['cal-cell'];
+    if(other)cls.push('other');
+    if(isToday)cls.push('today');
+    if(isSel)cls.push('sel');
+    html+=`<div class="${cls.join(' ')}" onclick="selectDate('${dateStr}')">
+      <div class="cal-num">${isToday?`<span>${day}</span>`:day}</div>
+      <div class="cal-dot">${dayEvents.slice(0,3).map(e=>`<span style="background:${e.color||COLORS[0]}"></span>`).join('')}</div>
+    </div>`;
+    if(i===41)break;
+  }
+  html+=`</div>`;
+
+  if(selDate){
+    const dayEv=events.filter(e=>e.date===selDate).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    const parts=selDate.split('-');
+    html+=`<div class="ev-date">${parts[1]}/${parts[2]}の予定 (${dayEv.length}件)</div>`;
+    if(dayEv.length){
+      dayEv.forEach(e=>{
+        html+=`<div class="ev-item">
+          <div class="ev-color" style="background:${e.color||COLORS[0]}"></div>
+          <div class="ev-body">
+            <div class="ev-title">${esc(e.title)}</div>
+            ${e.time?`<div class="ev-time">${e.time}${e.endTime?' 〜 '+e.endTime:''}</div>`:''}
+            ${e.memo?`<div class="ev-memo">${esc(e.memo)}</div>`:''}
+          </div>
+          <div class="ev-actions">
+            <button onclick="editEvent('${e.id}')">編集</button>
+            <button class="del" onclick="delEvent('${e.id}')">削除</button>
+          </div>
+        </div>`;
+      });
+    }else{
+      html+=`<div class="empty-ev">予定はありません</div>`;
+    }
+    html+=`<button class="btn btn-outline" onclick="addToDate('${selDate}')">＋ この日に予定を追加</button>`;
+  }
+  $('page-cal').innerHTML=html;
+}
+
+function navMonth(d){curMonth+=d;if(curMonth>11){curMonth=0;curYear++}if(curMonth<0){curMonth=11;curYear--}renderCal()}
+function selectDate(d){selDate=d;renderCal()}
+function addToDate(d){selDate=d;editId=null;switchTab('add');setTimeout(()=>{const di=$('evDate');if(di)di.value=d},50)}
+
+let formColor=COLORS[0];
+function renderForm(){
+  const ev=editId?events.find(e=>e.id===editId):null;
+  if(ev)formColor=ev.color||COLORS[0];
+  $('page-add').innerHTML=`<div class="form-card">
+    <div class="form-group"><label>タイトル</label><input id="evTitle" value="${esc(ev?.title||'')}" placeholder="予定のタイトル"></div>
+    <div class="form-group"><label>日付</label><input type="date" id="evDate" value="${ev?.date||selDate||iso(curYear||new Date().getFullYear(),curMonth??new Date().getMonth(),new Date().getDate())}"></div>
+    <div class="form-group" style="display:flex;gap:12px">
+      <div style="flex:1"><label>開始時刻</label><input type="time" id="evTime" value="${ev?.time||''}"></div>
+      <div style="flex:1"><label>終了時刻</label><input type="time" id="evEnd" value="${ev?.endTime||''}"></div>
+    </div>
+    <div class="form-group"><label>メモ</label><textarea id="evMemo" placeholder="補足情報">${esc(ev?.memo||'')}</textarea></div>
+    <div class="form-group"><label>カラー</label>
+      <div class="color-row" id="colorRow">${COLORS.map(c=>`<div class="color-btn${c===formColor?' active':''}" style="background:${c}" onclick="pickColor('${c}')"></div>`).join('')}</div>
+    </div>
+    <button class="btn btn-primary" onclick="saveEvent()">${editId?'更新':'追加'}</button>
+    ${editId?'<button class="btn btn-outline" onclick="editId=null;switchTab(\'cal\')">キャンセル</button>':''}
+  </div>`;
+}
+function pickColor(c){formColor=c;document.querySelectorAll('.color-btn').forEach(b=>b.classList.toggle('active',b.style.background===c))}
+function saveEvent(){
+  const title=$('evTitle').value.trim();
+  if(!title){toast('タイトルを入力してください');return}
+  if(!editId&&events.length>=5){toast('デモ版は5件まで登録できます。製品版は無制限です。');return}
+  const ev={id:editId||'e'+Date.now(),title,date:$('evDate').value,time:$('evTime').value,endTime:$('evEnd').value,memo:$('evMemo').value.trim(),color:formColor};
+  if(editId){events=events.map(e=>e.id===editId?ev:e)}else{events.push(ev)}
+  save();editId=null;selDate=ev.date;toast(editId?'更新しました':'追加しました');switchTab('cal');
+}
+function editEvent(id){editId=id;switchTab('add')}
+function delEvent(id){if(!confirm('この予定を削除しますか？'))return;events=events.filter(e=>e.id!==id);save();renderCal()}
+
+function renderList(){
+  const upcoming=events.filter(e=>e.date>=iso(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()))
+    .sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||''));
+  const past=events.filter(e=>e.date<iso(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()))
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  let html='<h3 style="font-size:15px;margin-bottom:12px">今後の予定 ('+upcoming.length+'件)</h3>';
+  if(upcoming.length){
+    upcoming.forEach(e=>{html+=evCard(e)});
+  }else{html+=`<div class="empty-ev">今後の予定はありません</div>`}
+  if(past.length){
+    html+=`<h3 style="font-size:15px;margin:20px 0 12px">過去の予定 (${past.length}件)</h3>`;
+    past.slice(0,20).forEach(e=>{html+=evCard(e)});
+    if(past.length>20)html+=`<div class="empty-ev">他 ${past.length-20}件</div>`;
+  }
+  $('page-list').innerHTML=html;
+}
+function evCard(e){
+  return `<div class="ev-item"><div class="ev-color" style="background:${e.color||COLORS[0]}"></div>
+    <div class="ev-body"><div class="ev-title">${esc(e.title)}</div>
+    <div class="ev-time">${e.date.replace(/-/g,'/')}${e.time?' '+e.time:''}</div>
+    ${e.memo?`<div class="ev-memo">${esc(e.memo)}</div>`:''}</div>
+    <div class="ev-actions"><button onclick="editEvent('${e.id}')">編集</button><button class="del" onclick="delEvent('${e.id}');renderList()">削除</button></div></div>`;
+}
+
+function renderSettings(){
+  $('page-settings').innerHTML=`<div class="form-card">
+    <div class="setting-item"><div><div class="setting-label">データ書き出し（JSON）</div><div class="setting-sub">バックアップ用</div></div>
+      <button onclick="exportJSON()">書き出し</button></div>
+    <div class="setting-item"><div><div class="setting-label">データ読み込み（JSON）</div><div class="setting-sub">復元用</div></div>
+      <button onclick="$('impFile').click()">読み込み</button></div>
+    <div class="setting-item"><div><div class="setting-label">CSV出力</div><div class="setting-sub">Excel等で開けます</div></div>
+      <button onclick="exportCSV()">出力</button></div>
+    <div class="setting-item" style="border-bottom:none"><div><div class="setting-label" style="color:var(--accent)">全データ削除</div><div class="setting-sub">すべての予定を消去します</div></div>
+      <button style="color:var(--accent)" onclick="clearAll()">削除</button></div>
+  </div>
+  <input type="file" id="impFile" accept=".json" hidden onchange="importJSON(this)">
+  <!-- ★差し替え：フッター -->
+  <div style="text-align:center;padding:24px 16px 16px;font-size:11px;color:var(--sub);opacity:.6">Powered by HTMLテンプレート</div>`;
+}
+function exportJSON(){toast('製品版でご利用いただけます');return}
+function importJSON(inp){toast('製品版でご利用いただけます');return}
+function exportCSV(){toast('製品版でご利用いただけます');return}
+function clearAll(){if(!confirm('すべての予定を削除します。よろしいですか？'))return;events=[];save();toast('削除しました');switchTab('cal')}
+function dl(text,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+load();
+const now=new Date();
+curYear=now.getFullYear();curMonth=now.getMonth();
+$('headerDate').textContent=`${curYear}年${curMonth+1}月`;
+renderCal();
+</script>
+</body>
+</html>

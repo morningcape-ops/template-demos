@@ -1,0 +1,296 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>プロジェクトボード</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap">
+<style>
+/* ★差し替え：アプリ名・カラー */
+:root {
+  --accent: #0891b2; --accent-hover: #0e7490;
+  --accent-soft: rgba(8,145,178,.08); --accent-glow: rgba(8,145,178,.15);
+  --bg: #f0f7f9; --card: #ffffff; --card-hover: #f7fbfc;
+  --ink: #1e293b; --sub: #64748b; --muted: #94a3b8;
+  --line: #e2e8f0; --line-soft: #f1f5f9;
+  --high: #ef4444; --high-soft: rgba(239,68,68,.07);
+  --mid: #f59e0b; --mid-soft: rgba(245,158,11,.07);
+  --low: #94a3b8;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.03);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.1), 0 4px 12px rgba(0,0,0,.05);
+  --radius: 14px; --radius-sm: 10px;
+  --font: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1a1d; --card: #182428; --card-hover: #1e3035;
+    --ink: #e2eff2; --sub: #8aa5ad; --muted: #5a7780;
+    --line: #2a3d42; --line-soft: #1e2f33;
+    --accent: #22d3ee; --accent-hover: #06b6d4;
+    --accent-soft: rgba(34,211,238,.12); --accent-glow: rgba(34,211,238,.2);
+    --high-soft: rgba(239,68,68,.12); --mid-soft: rgba(245,158,11,.12);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.2);
+    --shadow-md: 0 4px 16px rgba(0,0,0,.25);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,.4);
+    color-scheme: dark;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--ink); min-height: 100dvh; -webkit-font-smoothing: antialiased; }
+.header {
+  position: sticky; top: 0; z-index: 50;
+  background: linear-gradient(135deg, #0e7490 0%, #0891b2 50%, #22d3ee 100%);
+  color: #fff; padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.header h1 { font-size: 17px; font-weight: 700; letter-spacing: .02em; }
+.header-actions { display: flex; gap: 8px; }
+.header-btn { padding: 6px 12px; border: 1px solid rgba(255,255,255,.3); border-radius: 8px; background: rgba(255,255,255,.1); color: #fff; font-size: 12px; cursor: pointer; font-family: inherit; }
+.tabs {
+  display: flex; background: var(--card); border-bottom: 1px solid var(--line);
+  position: sticky; top: 53px; z-index: 40; padding: 0 8px; box-shadow: var(--shadow-sm);
+}
+.tab { flex: 1; padding: 13px 0; text-align: center; font-size: 13px; font-weight: 500; color: var(--sub); cursor: pointer; border-bottom: 2.5px solid transparent; transition: color .15s, border-color .15s; }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.page { display: none; padding: 16px; }
+.page.active { display: block; }
+
+/* Board */
+.board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 16px; min-height: 60vh; }
+.column { flex: 0 0 280px; background: var(--line-soft); border-radius: var(--radius); display: flex; flex-direction: column; max-height: calc(100vh - 140px); }
+@media (max-width: 600px) { .column { flex: 0 0 85vw; } }
+.col-header { padding: 12px 14px; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
+.col-count { background: var(--card); border-radius: 10px; padding: 1px 8px; font-size: 12px; font-weight: 500; color: var(--sub); }
+.col-body { flex: 1; overflow-y: auto; padding: 0 8px 8px; }
+.col-add { margin: 0 8px 8px; padding: 10px; border: 2px dashed var(--line); border-radius: var(--radius-sm); text-align: center; color: var(--sub); cursor: pointer; font-size: 13px; }
+.col-add:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Task card */
+.task { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; cursor: grab; box-shadow: var(--shadow-sm); transition: box-shadow .15s, border-color .15s; }
+.task:hover { box-shadow: var(--shadow-md); border-color: var(--accent); }
+.task.dragging { opacity: .5; }
+.task-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.task-desc { font-size: 12px; color: var(--sub); margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.task-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.badge.high { background: var(--high-soft); color: var(--high); }
+.badge.mid { background: var(--mid-soft); color: var(--mid); }
+.badge.low { background: var(--line-soft); color: var(--sub); }
+.task-due { font-size: 11px; color: var(--sub); }
+.task-due.overdue { color: var(--high); font-weight: 600; }
+.drop-zone { height: 4px; border-radius: 2px; margin-bottom: 4px; transition: height .15s, background .15s; }
+.drop-zone.over { height: 40px; background: var(--accent-soft); border: 2px dashed var(--accent); border-radius: 8px; }
+
+/* Dialog */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: center; justify-content: center; }
+.overlay.show { display: flex; }
+.dialog { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; width: min(440px, 92vw); max-height: 90vh; overflow: auto; box-shadow: var(--shadow-lg); }
+.dialog h3 { font-size: 16px; margin-bottom: 14px; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--sub); margin-bottom: 4px; }
+.form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 15px; font-family: inherit; background: var(--card); color: var(--ink); }
+.form-group textarea { min-height: 60px; resize: vertical; }
+.priority-row { display: flex; gap: 8px; }
+.pri-btn { flex: 1; padding: 8px; border: 2px solid var(--line); border-radius: 8px; background: var(--card); font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; }
+.pri-btn.high { color: var(--high); }
+.pri-btn.mid { color: var(--mid); }
+.pri-btn.low { color: var(--sub); }
+.pri-btn.active.high { background: var(--high-soft); border-color: var(--high); }
+.pri-btn.active.mid { background: var(--mid-soft); border-color: var(--mid); }
+.pri-btn.active.low { background: var(--line-soft); border-color: var(--sub); }
+.dlg-actions { display: flex; gap: 8px; margin-top: 16px; }
+.dlg-actions button { flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.dlg-actions .save { background: var(--accent); color: #fff; }
+.dlg-actions .cancel { background: var(--line-soft); color: var(--sub); }
+.dlg-actions .del { background: none; color: var(--high); border: 1px solid var(--high); flex: 0; padding: 10px 16px; }
+
+/* Stats */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.stat-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px; text-align: center; box-shadow: var(--shadow-sm); }
+.stat-num { font-size: 28px; font-weight: 700; color: var(--accent); }
+.stat-label { font-size: 12px; color: var(--sub); margin-top: 2px; }
+
+/* Settings */
+.setting-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 8px; box-shadow: var(--shadow-sm); }
+.setting-label { font-size: 14px; }
+.setting-sub { font-size: 12px; color: var(--sub); }
+.setting-item button { padding: 6px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); cursor: pointer; font-family: inherit; font-size: 13px; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 20px; border-radius: 8px; z-index: 9999; font-size: 14px; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📋 プロジェクトボード</h1>
+  <div class="header-actions">
+    <button class="header-btn" onclick="openAdd(null,0)">＋ タスク</button>
+  </div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('board')">ボード</div>
+  <div class="tab" onclick="switchTab('stats')">集計</div>
+  <div class="tab" onclick="switchTab('settings')">設定</div>
+</div>
+<div class="page active" id="page-board"></div>
+<div class="page" id="page-stats"></div>
+<div class="page" id="page-settings"></div>
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeDlg()">
+  <div class="dialog" id="dlg"></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const KEY='kb_';
+const COLS_DEF=[{id:'todo',name:'未着手'},{id:'doing',name:'進行中'},{id:'done',name:'完了'}];
+let tasks=[],cols=[],editId=null,dragId=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function load(){
+  try{tasks=JSON.parse(localStorage.getItem(KEY+'tasks'))||[]}catch(e){tasks=[]}
+  try{cols=JSON.parse(localStorage.getItem(KEY+'cols'));if(!cols||!cols.length)cols=JSON.parse(JSON.stringify(COLS_DEF))}catch(e){cols=JSON.parse(JSON.stringify(COLS_DEF))}
+}
+function save(){try{localStorage.setItem(KEY+'tasks',JSON.stringify(tasks));localStorage.setItem(KEY+'cols',JSON.stringify(cols))}catch(e){}}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['board','stats','settings'][i]===id));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id));
+  if(id==='board')renderBoard();
+  if(id==='stats')renderStats();
+  if(id==='settings')renderSettings();
+}
+
+function renderBoard(){
+  let html='<div class="board">';
+  cols.forEach((col,ci)=>{
+    const colTasks=tasks.filter(t=>t.col===col.id).sort((a,b)=>(a.order||0)-(b.order||0));
+    html+=`<div class="column" data-col="${col.id}">
+      <div class="col-header">${esc(col.name)} <span class="col-count">${colTasks.length}</span></div>
+      <div class="col-body" data-col="${col.id}"
+        ondragover="event.preventDefault()" ondrop="dropTask(event,'${col.id}',-1)">`;
+    colTasks.forEach((t,i)=>{
+      const today=new Date().toISOString().slice(0,10);
+      const overdue=t.due&&t.due<today&&col.id!=='done';
+      html+=`<div class="drop-zone" data-col="${col.id}" data-pos="${i}"
+        ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')"
+        ondrop="event.stopPropagation();dropTask(event,'${col.id}',${i});this.classList.remove('over')"></div>
+      <div class="task" draggable="true" data-id="${t.id}"
+        ondragstart="dragStart(event,'${t.id}')" ondragend="dragEnd(event)"
+        onclick="openEdit('${t.id}')">
+        <div class="task-title">${esc(t.title)}</div>
+        ${t.desc?`<div class="task-desc">${esc(t.desc)}</div>`:''}
+        <div class="task-meta">
+          <span class="badge ${t.priority||'low'}">${{high:'高',mid:'中',low:'低'}[t.priority||'low']}</span>
+          ${t.due?`<span class="task-due${overdue?' overdue':''}">${t.due.replace(/-/g,'/')}</span>`:''}
+        </div>
+      </div>`;
+    });
+    html+=`<div class="drop-zone" data-col="${col.id}" data-pos="${colTasks.length}"
+      ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')"
+      ondrop="event.stopPropagation();dropTask(event,'${col.id}',${colTasks.length});this.classList.remove('over')"></div>`;
+    html+=`</div><div class="col-add" onclick="openAdd(null,'${col.id}')">＋ タスクを追加</div></div>`;
+  });
+  html+='</div>';
+  $('page-board').innerHTML=html;
+}
+
+function dragStart(e,id){dragId=id;e.target.classList.add('dragging');e.dataTransfer.effectAllowed='move'}
+function dragEnd(e){e.target.classList.remove('dragging');document.querySelectorAll('.drop-zone.over').forEach(z=>z.classList.remove('over'))}
+function dropTask(e,col,pos){
+  e.preventDefault();if(!dragId)return;
+  const task=tasks.find(t=>t.id===dragId);if(!task)return;
+  const oldCol=task.col;task.col=col;
+  const colTasks=tasks.filter(t=>t.col===col&&t.id!==dragId).sort((a,b)=>(a.order||0)-(b.order||0));
+  if(pos<0)pos=colTasks.length;
+  colTasks.splice(pos,0,task);
+  colTasks.forEach((t,i)=>t.order=i);
+  dragId=null;save();renderBoard();
+}
+
+let formPri='low',formCol='';
+function openAdd(id,col){
+  editId=null;formPri='low';formCol=typeof col==='string'?col:cols[0]?.id||'todo';
+  $('dlg').innerHTML=taskForm(null);$('overlay').classList.add('show');
+}
+function openEdit(id){
+  editId=id;const t=tasks.find(x=>x.id===id);if(!t)return;
+  formPri=t.priority||'low';formCol=t.col;
+  $('dlg').innerHTML=taskForm(t);$('overlay').classList.add('show');
+}
+function closeDlg(){$('overlay').classList.remove('show');editId=null}
+function taskForm(t){
+  return `<h3>${t?'タスクを編集':'タスクを追加'}</h3>
+    <div class="form-group"><label>タイトル</label><input id="tTitle" value="${esc(t?.title||'')}" placeholder="やること"></div>
+    <div class="form-group"><label>説明</label><textarea id="tDesc" placeholder="詳細・メモ">${esc(t?.desc||'')}</textarea></div>
+    <div class="form-group"><label>優先度</label>
+      <div class="priority-row">
+        <div class="pri-btn high${formPri==='high'?' active':''}" onclick="setPri('high')">高</div>
+        <div class="pri-btn mid${formPri==='mid'?' active':''}" onclick="setPri('mid')">中</div>
+        <div class="pri-btn low${formPri==='low'?' active':''}" onclick="setPri('low')">低</div>
+      </div></div>
+    <div class="form-group"><label>期限</label><input type="date" id="tDue" value="${t?.due||''}"></div>
+    <div class="form-group"><label>列</label><select id="tCol">${cols.map(c=>`<option value="${c.id}"${c.id===formCol?' selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+    <div class="dlg-actions">
+      ${t?`<button class="del" onclick="delTask('${t.id}')">削除</button>`:''}
+      <button class="cancel" onclick="closeDlg()">キャンセル</button>
+      <button class="save" onclick="saveTask()">保存</button>
+    </div>`;
+}
+function setPri(p){formPri=p;document.querySelectorAll('.pri-btn').forEach(b=>{b.classList.toggle('active',b.classList.contains(p))})}
+function saveTask(){
+  const title=$('tTitle').value.trim();if(!title){toast('タイトルを入力してください');return}
+  if(!editId&&tasks.length>=5){toast('デモ版は5件まで登録できます。製品版は無制限です。');return}
+  const data={id:editId||'t'+Date.now(),title,desc:$('tDesc').value.trim(),priority:formPri,due:$('tDue').value,col:$('tCol').value,order:999};
+  if(editId){tasks=tasks.map(t=>t.id===editId?{...t,...data}:t)}else{tasks.push(data)}
+  save();closeDlg();renderBoard();toast(editId?'更新しました':'追加しました');
+}
+function delTask(id){if(!confirm('このタスクを削除しますか？'))return;tasks=tasks.filter(t=>t.id!==id);save();closeDlg();renderBoard()}
+
+function renderStats(){
+  const total=tasks.length;
+  const byCols=cols.map(c=>({name:c.name,count:tasks.filter(t=>t.col===c.id).length}));
+  const highCount=tasks.filter(t=>t.priority==='high'&&t.col!=='done').length;
+  const today=new Date().toISOString().slice(0,10);
+  const overdue=tasks.filter(t=>t.due&&t.due<today&&t.col!=='done').length;
+  let html=`<div class="stats-grid">
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">全タスク</div></div>`;
+  byCols.forEach(c=>{html+=`<div class="stat-card"><div class="stat-num">${c.count}</div><div class="stat-label">${esc(c.name)}</div></div>`});
+  html+=`<div class="stat-card"><div class="stat-num" style="color:var(--high)">${highCount}</div><div class="stat-label">高優先度（未完了）</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:${overdue?'var(--high)':'var(--accent)'}">${overdue}</div><div class="stat-label">期限超過</div></div>
+  </div>`;
+  if(overdue){
+    html+='<h3 style="font-size:15px;margin:16px 0 10px">期限超過タスク</h3>';
+    tasks.filter(t=>t.due&&t.due<today&&t.col!=='done').sort((a,b)=>a.due.localeCompare(b.due)).forEach(t=>{
+      html+=`<div class="setting-item" onclick="openEdit('${t.id}')" style="cursor:pointer">
+        <div><div class="setting-label">${esc(t.title)}</div><div class="setting-sub">${t.due.replace(/-/g,'/')} — ${cols.find(c=>c.id===t.col)?.name||''}</div></div>
+        <span class="badge high">超過</span></div>`;
+    });
+  }
+  $('page-stats').innerHTML=html;
+}
+
+function renderSettings(){
+  $('page-settings').innerHTML=`<div style="max-width:500px;margin:0 auto">
+    <div class="setting-item"><div><div class="setting-label">JSON書き出し</div><div class="setting-sub">バックアップ</div></div>
+      <button onclick="exportJSON()">書き出し</button></div>
+    <div class="setting-item"><div><div class="setting-label">JSON読み込み</div><div class="setting-sub">復元</div></div>
+      <button onclick="$('impFile').click()">読み込み</button></div>
+    <div class="setting-item"><div><div class="setting-label">CSV出力</div><div class="setting-sub">Excel等で開けます</div></div>
+      <button onclick="exportCSV()">出力</button></div>
+    <div class="setting-item"><div><div class="setting-label" style="color:var(--high)">全データ削除</div></div>
+      <button style="color:var(--high)" onclick="clearAll()">削除</button></div>
+    <input type="file" id="impFile" accept=".json" hidden onchange="importJSON(this)">
+    <!-- ★差し替え：フッター -->
+    <div style="text-align:center;padding:24px 16px;font-size:11px;color:var(--sub);opacity:.6">Powered by HTMLテンプレート</div>
+  </div>`;
+}
+function exportJSON(){toast('製品版でご利用いただけます');return}
+function importJSON(inp){toast('製品版でご利用いただけます');return}
+function exportCSV(){toast('製品版でご利用いただけます');return}
+function clearAll(){if(!confirm('すべてのタスクと列設定を削除します。よろしいですか？'))return;tasks=[];cols=JSON.parse(JSON.stringify(COLS_DEF));save();toast('削除しました');switchTab('board')}
+function dl(text,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+
+load();renderBoard();
+</script>
+</body>
+</html>
