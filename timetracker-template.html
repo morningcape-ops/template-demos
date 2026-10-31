@@ -1,0 +1,373 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>時間管理トラッカー</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap">
+<style>
+:root {
+  --accent: #f97316; --accent-hover: #ea580c;
+  --accent-soft: rgba(249,115,22,.07); --accent-glow: rgba(249,115,22,.15);
+  --bg: #faf9f7; --card: #ffffff; --ink: #1c1917; --sub: #78716c;
+  --muted: #a8a29e; --line: #e7e5e4; --line-soft: #f5f5f4;
+  --cat1: #f97316; --cat2: #3b82f6; --cat3: #8b5cf6; --cat4: #10b981; --cat5: #ec4899;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.04); --shadow-md: 0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.1);
+  --radius: 14px; --radius-sm: 10px;
+  --font: 'Noto Sans JP', system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#0c0a09;--card:#1c1917;--ink:#e7e5e4;--sub:#a8a29e;--muted:#57534e;--line:#292524;--line-soft:#1c1917;
+  --accent-soft:rgba(249,115,22,.12);--accent-glow:rgba(249,115,22,.2);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.2);--shadow-md:0 4px 16px rgba(0,0,0,.3);--shadow-lg:0 12px 40px rgba(0,0,0,.5);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"] {
+  --bg:#0c0a09;--card:#1c1917;--ink:#e7e5e4;--sub:#a8a29e;--muted:#57534e;--line:#292524;--line-soft:#1c1917;
+  --accent-soft:rgba(249,115,22,.12);--accent-glow:rgba(249,115,22,.2);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.2);--shadow-md:0 4px 16px rgba(0,0,0,.3);--shadow-lg:0 12px 40px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased}
+.header{background:linear-gradient(135deg,#ea580c 0%,#f97316 50%,#fb923c 100%);color:#fff;padding:20px 20px 48px;text-align:center}
+.header h1{font-size:20px;font-weight:700;letter-spacing:.02em}
+.header p{font-size:12px;opacity:.8;margin-top:4px}
+.container{max-width:520px;margin:-32px auto 0;padding:0 16px 100px;position:relative}
+.tabs{display:flex;gap:2px;background:var(--card);border-radius:var(--radius);padding:4px;margin-bottom:16px;border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+.tab{flex:1;padding:10px 0;border:none;border-radius:var(--radius-sm);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--sub);transition:all .2s}
+.tab:hover{background:var(--line-soft)}
+.tab.active{background:var(--accent);color:#fff;box-shadow:var(--shadow-sm)}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+.card-title{font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.section{display:none}.section.active{display:block}
+.pomo-display{text-align:center;padding:12px 0}
+.pomo-ring{width:200px;height:200px;margin:0 auto 12px;position:relative}
+.pomo-ring svg{transform:rotate(-90deg)}
+.pomo-ring .time-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.pomo-time{font-size:56px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.pomo-label{font-size:13px;color:var(--sub);margin-top:4px;font-weight:500}
+.pomo-btns{display:flex;gap:8px;justify-content:center;margin-top:12px}
+.pomo-btn{padding:12px 28px;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s}
+.pomo-btn.primary{background:linear-gradient(135deg,#ea580c,#f97316);color:#fff;box-shadow:0 2px 8px rgba(249,115,22,.25)}
+.pomo-btn.primary:hover{box-shadow:0 4px 16px rgba(249,115,22,.35);transform:translateY(-1px)}
+.pomo-btn.secondary{background:var(--line-soft);color:var(--sub)}
+.pomo-btn.secondary:hover{background:var(--line)}
+.pomo-btn:active{transform:scale(.97)}
+.pomo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.pomo-stat{text-align:center;padding:10px;background:var(--line-soft);border-radius:var(--radius-sm)}
+.pomo-stat-val{font-size:20px;font-weight:700;color:var(--accent)}
+.pomo-stat-lbl{font-size:10px;color:var(--sub);margin-top:2px}
+.cat-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.cat-chip{padding:6px 12px;border-radius:20px;border:1.5px solid var(--line);background:transparent;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);color:var(--sub);transition:all .2s}
+.cat-chip.active{color:#fff;border-color:transparent}
+.cat-chip[data-c="0"].active{background:var(--cat1)}.cat-chip[data-c="1"].active{background:var(--cat2)}
+.cat-chip[data-c="2"].active{background:var(--cat3)}.cat-chip[data-c="3"].active{background:var(--cat4)}
+.cat-chip[data-c="4"].active{background:var(--cat5)}
+.log-form{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.log-field{display:flex;flex-direction:column;gap:4px}
+.log-field label{font-size:10px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.06em}
+.log-field input{padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);background:var(--bg);color:var(--ink);transition:border-color .2s,box-shadow .2s}
+.log-field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.log-add{padding:10px 16px;border:none;border-radius:var(--radius-sm);background:linear-gradient(135deg,#ea580c,#f97316);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap;align-self:end}
+.log-add:hover{box-shadow:0 4px 16px rgba(249,115,22,.35)}
+.log-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-soft)}
+.log-item:last-child{border-bottom:none}
+.log-dot{width:10px;height:10px;min-width:10px;border-radius:50%}
+.log-info{flex:1;min-width:0}
+.log-info-main{font-size:14px;font-weight:500}
+.log-info-sub{font-size:11px;color:var(--muted)}
+.log-hrs{font-size:16px;font-weight:700;color:var(--accent);white-space:nowrap}
+.log-del{border:none;background:none;cursor:pointer;font-size:14px;color:var(--muted);opacity:0;padding:4px;border-radius:6px;transition:all .15s}
+.log-item:hover .log-del{opacity:.5}
+.log-del:hover{opacity:1!important;color:#ef4444;background:rgba(239,68,68,.06)}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.bar-label{font-size:11px;color:var(--sub);width:38px;text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:20px;background:var(--line-soft);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .4s cubic-bezier(.16,1,.3,1)}
+.bar-val{font-size:11px;font-weight:600;color:var(--sub);width:36px;flex-shrink:0}
+.streak-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.streak-cell{aspect-ratio:1;border-radius:3px;background:var(--line-soft)}
+.streak-cell.l1{background:rgba(249,115,22,.2)}.streak-cell.l2{background:rgba(249,115,22,.4)}
+.streak-cell.l3{background:rgba(249,115,22,.6)}.streak-cell.l4{background:var(--accent)}
+.streak-days{display:flex;justify-content:space-between;margin-bottom:4px}
+.streak-day{font-size:9px;color:var(--muted);text-align:center;flex:1}
+.streak-count{text-align:center;margin-top:12px}
+.streak-num{font-size:32px;font-weight:800;color:var(--accent)}
+.streak-lbl{font-size:12px;color:var(--sub)}
+.compare{display:flex;gap:12px;margin-top:8px}
+.compare-box{flex:1;text-align:center;padding:10px;background:var(--line-soft);border-radius:var(--radius-sm)}
+.compare-val{font-size:18px;font-weight:700}
+.compare-lbl{font-size:10px;color:var(--sub);margin-top:2px}
+.compare-diff{font-size:12px;font-weight:600;margin-top:4px}
+.compare-diff.up{color:#10b981}.compare-diff.down{color:#ef4444}.compare-diff.flat{color:var(--muted)}
+.goal-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.goal-input{width:60px;padding:8px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;font-family:var(--font);text-align:center;background:var(--bg);color:var(--ink)}
+.goal-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.goal-text{font-size:13px;color:var(--sub)}
+.goal-bar{height:12px;background:var(--line-soft);border-radius:6px;overflow:hidden;margin-top:4px}
+.goal-fill{height:100%;background:linear-gradient(90deg,#ea580c,#fb923c);border-radius:6px;transition:width .4s cubic-bezier(.16,1,.3,1)}
+.goal-pct{font-size:20px;font-weight:700;color:var(--accent);margin-top:8px;text-align:center}
+.pie-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;justify-content:center}
+.pie-legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--sub)}
+.pie-legend-dot{width:8px;height:8px;border-radius:50%}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:14px;font-weight:500}
+.setting-sub{font-size:11px;color:var(--muted)}
+.setting-input{padding:8px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;font-family:var(--font);width:70px;text-align:center;background:var(--bg);color:var(--ink)}
+.setting-input:focus{outline:none;border-color:var(--accent)}
+.setting-btn{padding:10px 20px;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s}
+.export-btn{background:var(--accent-soft);color:var(--accent)}
+.export-btn:hover{background:var(--accent-glow)}
+.danger-btn{background:rgba(239,68,68,.06);color:#ef4444}
+.danger-btn:hover{background:rgba(239,68,68,.12)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:500;z-index:999;box-shadow:var(--shadow-lg);animation:toastA 2.5s ease forwards}
+@keyframes toastA{0%{opacity:0;transform:translateX(-50%) translateY(12px)}8%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0}}
+.empty{text-align:center;padding:32px 20px;color:var(--muted);font-size:13px;line-height:1.8}
+.empty-icon{font-size:36px;margin-bottom:8px}
+.footer{text-align:center;padding:20px;font-size:11px;color:var(--muted);line-height:1.7}
+.footer a{color:var(--accent);text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>&#9201; 時間管理トラッカー</h1>
+  <p id="dateLabel"></p>
+</div>
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab(0)">タイマー</button>
+    <button class="tab" onclick="showTab(1)">記録</button>
+    <button class="tab" onclick="showTab(2)">分析</button>
+    <button class="tab" onclick="showTab(3)">設定</button>
+  </div>
+  <div class="section active" id="sec0">
+    <div class="card">
+      <div class="cat-row" id="pomoCats"></div>
+      <div class="pomo-display">
+        <div class="pomo-ring">
+          <svg width="200" height="200" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="90" fill="none" stroke="var(--line-soft)" stroke-width="8"/>
+            <circle id="pomoArc" cx="100" cy="100" r="90" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" stroke-dasharray="565.5" stroke-dashoffset="0"/>
+          </svg>
+          <div class="time-text">
+            <div class="pomo-time" id="pomoTime">25:00</div>
+            <div class="pomo-label" id="pomoLabel">集中タイム</div>
+          </div>
+        </div>
+        <div class="pomo-btns">
+          <button class="pomo-btn primary" id="pomoStartBtn" onclick="togglePomo()">開始</button>
+          <button class="pomo-btn secondary" onclick="resetPomo()">リセット</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">今日のサマリー</div>
+      <div class="pomo-stats">
+        <div class="pomo-stat"><div class="pomo-stat-val" id="todayPomos">0</div><div class="pomo-stat-lbl">ポモドーロ</div></div>
+        <div class="pomo-stat"><div class="pomo-stat-val" id="todayMins">0</div><div class="pomo-stat-lbl">集中（分）</div></div>
+        <div class="pomo-stat"><div class="pomo-stat-val" id="todayStreak">0</div><div class="pomo-stat-lbl">連続日数</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="section" id="sec1">
+    <div class="card">
+      <div class="card-title">作業を記録</div>
+      <div class="cat-row" id="logCats"></div>
+      <div class="log-form">
+        <div class="log-field"><label>日付</label><input type="date" id="logDate"></div>
+        <div class="log-field"><label>時間(h)</label><input type="number" id="logHours" min="0.25" max="24" step="0.25" value="1" style="width:70px"></div>
+        <div class="log-field"><label>メモ</label><input type="text" id="logMemo" placeholder="何をした？" style="width:140px"></div>
+        <button class="log-add" onclick="addLog()">記録</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">記録一覧</div>
+      <div id="logList"></div>
+    </div>
+  </div>
+  <div class="section" id="sec2">
+    <div class="card">
+      <div class="card-title">今週 vs 先週</div>
+      <div class="compare" id="weekCompare"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">週間グラフ（過去4週）</div>
+      <div id="weekChart"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">カテゴリ別（今月）</div>
+      <div style="display:flex;justify-content:center"><svg id="pieChart" width="160" height="160" viewBox="0 0 160 160"></svg></div>
+      <div class="pie-legend" id="pieLegend"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">週間目標</div>
+      <div class="goal-row"><input class="goal-input" type="number" id="goalInput" min="1" max="100" value="20" onchange="saveGoal()"><span class="goal-text">時間 / 週</span></div>
+      <div class="goal-bar"><div class="goal-fill" id="goalFill" style="width:0%"></div></div>
+      <div class="goal-pct" id="goalPct">0%</div>
+    </div>
+    <div class="card">
+      <div class="card-title">連続記録（過去8週）</div>
+      <div class="streak-days"><span class="streak-day">月</span><span class="streak-day">火</span><span class="streak-day">水</span><span class="streak-day">木</span><span class="streak-day">金</span><span class="streak-day">土</span><span class="streak-day">日</span></div>
+      <div class="streak-grid" id="streakGrid"></div>
+      <div class="streak-count"><div class="streak-num" id="streakNum">0</div><div class="streak-lbl">日連続</div></div>
+    </div>
+  </div>
+  <div class="section" id="sec3">
+    <div class="card">
+      <div class="card-title">ポモドーロ設定</div>
+      <div class="setting-row"><div><div class="setting-label">集中時間</div><div class="setting-sub">1セットの作業時間（分）</div></div><input class="setting-input" type="number" id="setWork" min="5" max="90" value="25" onchange="saveSettings()"></div>
+      <div class="setting-row"><div><div class="setting-label">休憩時間</div><div class="setting-sub">セット間の休憩（分）</div></div><input class="setting-input" type="number" id="setBreak" min="1" max="30" value="5" onchange="saveSettings()"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">カテゴリ編集</div>
+      <div id="catEditor"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">データ管理</div>
+      <div class="setting-row"><div><div class="setting-label">JSON書き出し</div><div class="setting-sub">全データをバックアップ</div></div><button class="setting-btn export-btn" onclick="exportJSON()">書き出し</button></div>
+      <div class="setting-row"><div><div class="setting-label">JSON読み込み</div><div class="setting-sub">バックアップから復元</div></div><label class="setting-btn export-btn" style="cursor:pointer">読み込み<input type="file" accept=".json" onchange="importJSON(this)" hidden></label></div>
+      <div class="setting-row"><div><div class="setting-label">CSV書き出し</div><div class="setting-sub">記録をCSVで保存</div></div><button class="setting-btn export-btn" onclick="exportCSV()">書き出し</button></div>
+      <div class="setting-row"><div><div class="setting-label">全データ削除</div><div class="setting-sub">すべての記録を消去</div></div><button class="setting-btn danger-btn" onclick="clearAll()">削除</button></div>
+    </div>
+  </div>
+  <div class="footer">時間管理トラッカー &#8212; by オートメ屋<br>もっと業務テンプレートは <a href="https://note.com/" target="_blank" rel="noopener">noteショップ</a>で公開中</div>
+</div>
+<script>const P='tt_';
+const LS={get(k){try{const v=localStorage.getItem(P+k);return v?JSON.parse(v):null}catch{return null}},set(k,v){try{localStorage.setItem(P+k,JSON.stringify(v))}catch{}}};
+const COLOR_HEX=['#f97316','#3b82f6','#8b5cf6','#10b981','#ec4899'];
+let cats=LS.get('cats')||[{name:'副業',color:0},{name:'勉強',color:1},{name:'運動',color:2}];
+let logs=LS.get('logs')||[];
+let settings=LS.get('settings')||{work:25,break:5};
+let goal=LS.get('goal')||20;
+let pomoState={running:false,isBreak:false,remaining:25*60,interval:null,catIdx:0};
+let activeCatLog=0;
+function save(){LS.set('cats',cats);LS.set('logs',logs);LS.set('settings',settings);LS.set('goal',goal)}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function toast(m){document.querySelectorAll('.toast').forEach(e=>e.remove());const el=document.createElement('div');el.className='toast';el.textContent=m;document.body.appendChild(el);setTimeout(()=>el.parentNode&&el.remove(),2500)}
+function showTab(i){document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));document.querySelectorAll('.section').forEach((s,j)=>s.classList.toggle('active',j===i));if(i===1)renderLogs();if(i===2)renderAnalysis();if(i===3)renderSettings()}
+function renderCatChips(cid,ai,fn){const c=document.getElementById(cid);if(!c)return;c.innerHTML=cats.map((cat,i)=>'<button class="cat-chip'+(i===ai?' active':'')+'" data-c="'+cat.color+'" onclick="'+fn+'('+i+')">'+esc(cat.name)+'</button>').join('')}
+function setPomoCat(i){pomoState.catIdx=i;renderCatChips('pomoCats',i,'setPomoCat')}
+function setLogCat(i){activeCatLog=i;renderCatChips('logCats',i,'setLogCat')}
+const CIRC=2*Math.PI*90;
+function updatePomoDisplay(){
+  const total=pomoState.isBreak?settings.break*60:settings.work*60;
+  const r=pomoState.remaining,m=Math.floor(r/60),s=r%60;
+  document.getElementById('pomoTime').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  document.getElementById('pomoLabel').textContent=pomoState.isBreak?'休憩タイム':'集中タイム';
+  const progress=1-(r/total);
+  document.getElementById('pomoArc').setAttribute('stroke-dashoffset',String(CIRC*(1-progress)));
+  document.getElementById('pomoArc').setAttribute('stroke',pomoState.isBreak?'#10b981':'var(--accent)');
+  document.getElementById('pomoStartBtn').textContent=pomoState.running?'一時停止':'開始';
+}
+function togglePomo(){
+  if(pomoState.running){clearInterval(pomoState.interval);pomoState.running=false;updatePomoDisplay();return}
+  pomoState.running=true;
+  pomoState.interval=setInterval(()=>{
+    pomoState.remaining--;
+    if(pomoState.remaining<=0){
+      clearInterval(pomoState.interval);pomoState.running=false;
+      if(!pomoState.isBreak){
+        const hrs=Math.round(settings.work/60*100)/100;
+        logs.unshift({id:Date.now(),date:todayStr(),hours:hrs,cat:pomoState.catIdx,memo:'ポモドーロ完了',auto:true});
+        save();
+        try{if(Notification.permission==='granted')new Notification('集中タイム終了！',{body:settings.work+'分完了。休憩しましょう'})}catch{}
+        toast('集中タイム完了！ 休憩に入ります');
+        pomoState.isBreak=true;pomoState.remaining=settings.break*60;
+      }else{
+        toast('休憩終了！ 次のセットへ');
+        pomoState.isBreak=false;pomoState.remaining=settings.work*60;
+      }
+      updatePomoStats();updatePomoDisplay();return;
+    }
+    updatePomoDisplay();
+  },1000);
+  updatePomoDisplay();
+  if(typeof Notification!=='undefined'&&Notification.permission==='default')Notification.requestPermission();
+}
+function resetPomo(){clearInterval(pomoState.interval);pomoState.running=false;pomoState.isBreak=false;pomoState.remaining=settings.work*60;updatePomoDisplay()}
+function updatePomoStats(){
+  const today=todayStr(),tl=logs.filter(l=>l.date===today);
+  document.getElementById('todayPomos').textContent=tl.filter(l=>l.auto).length;
+  document.getElementById('todayMins').textContent=Math.round(tl.reduce((a,l)=>a+l.hours*60,0));
+  document.getElementById('todayStreak').textContent=calcStreak();
+}
+function calcStreak(){const ds=new Set(logs.map(l=>l.date));let s=0,d=new Date();while(ds.has(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))){s++;d.setDate(d.getDate()-1)}return s}
+function addLog(){
+  if(logs.length>=5){toast('⚠ デモ版の上限（5件）です。製品版でご利用ください');return}
+  const date=document.getElementById('logDate').value,hours=parseFloat(document.getElementById('logHours').value),memo=document.getElementById('logMemo').value.trim();
+  if(!date||!hours||hours<=0){toast('日付と時間を入力してください');return}
+  logs.unshift({id:Date.now(),date,hours,cat:activeCatLog,memo});save();document.getElementById('logMemo').value='';renderLogs();toast('記録しました');
+}
+function delLog(id){logs=logs.filter(l=>l.id!==id);save();renderLogs()}
+function renderLogs(){
+  const list=document.getElementById('logList');
+  if(!logs.length){list.innerHTML='<div class="empty"><div class="empty-icon">&#128221;</div>記録がありません</div>';renderCatChips('logCats',activeCatLog,'setLogCat');return}
+  list.innerHTML=logs.slice(0,50).map(l=>{const cat=cats[l.cat]||cats[0],c=COLOR_HEX[cat.color]||COLOR_HEX[0];return '<div class="log-item"><div class="log-dot" style="background:'+c+'"></div><div class="log-info"><div class="log-info-main">'+esc(cat.name)+(l.memo?' — '+esc(l.memo):'')+'</div><div class="log-info-sub">'+l.date+'</div></div><div class="log-hrs">'+l.hours+'h</div><button class="log-del" onclick="delLog('+l.id+')">×</button></div>'}).join('');
+  renderCatChips('logCats',activeCatLog,'setLogCat');
+}function renderAnalysis(){renderWeekCompare();renderWeekChart();renderPie();renderGoal();renderStreak()}
+function getWeekRange(off){const n=new Date(),dow=n.getDay(),mon=dow===0?-6:1-dow;const d=new Date(n);d.setDate(d.getDate()+mon-off*7);const days=[];for(let i=0;i<7;i++){const dd=new Date(d);dd.setDate(d.getDate()+i);days.push(dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0'))}return days}
+function weekTotal(off){const ds=new Set(getWeekRange(off));return logs.filter(l=>ds.has(l.date)).reduce((a,l)=>a+l.hours,0)}
+function renderWeekCompare(){
+  const tw=weekTotal(0),lw=weekTotal(1),diff=tw-lw,pct=lw?Math.round(diff/lw*100):0;
+  const cls=diff>0?'up':diff<0?'down':'flat',sign=diff>0?'+':'';
+  document.getElementById('weekCompare').innerHTML='<div class="compare-box"><div class="compare-val">'+tw.toFixed(1)+'h</div><div class="compare-lbl">今週</div></div><div class="compare-box"><div class="compare-val">'+lw.toFixed(1)+'h</div><div class="compare-lbl">先週</div><div class="compare-diff '+cls+'">'+sign+diff.toFixed(1)+'h ('+sign+pct+'%)</div></div>';
+}
+function renderWeekChart(){
+  const weeks=[];for(let i=3;i>=0;i--)weeks.push({label:i===0?'今週':i+'週前',val:weekTotal(i)});
+  const max=Math.max(...weeks.map(w=>w.val),1);
+  document.getElementById('weekChart').innerHTML=weeks.map(w=>'<div class="bar-row"><div class="bar-label">'+w.label+'</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.round(w.val/max*100)+'%;background:var(--accent)"></div></div><div class="bar-val">'+w.val.toFixed(1)+'h</div></div>').join('');
+}
+function renderPie(){
+  const now=new Date(),month=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const bc={};cats.forEach((_,i)=>bc[i]=0);logs.filter(l=>l.date.startsWith(month)).forEach(l=>bc[l.cat]=(bc[l.cat]||0)+l.hours);
+  const total=Object.values(bc).reduce((a,v)=>a+v,0);
+  const svg=document.getElementById('pieChart'),leg=document.getElementById('pieLegend');
+  if(!total){svg.innerHTML='<text x="80" y="85" text-anchor="middle" fill="var(--muted)" font-size="12">データなし</text>';leg.innerHTML='';return}
+  let cum=0,paths='',lh='';
+  cats.forEach((cat,i)=>{if(!bc[i])return;const pct=bc[i]/total,start=cum;cum+=pct;
+    if(pct>=.999){paths+='<circle cx="80" cy="80" r="70" fill="'+COLOR_HEX[cat.color]+'"/>';}
+    else{const a1=2*Math.PI*start-Math.PI/2,a2=2*Math.PI*cum-Math.PI/2,x1=80+70*Math.cos(a1),y1=80+70*Math.sin(a1),x2=80+70*Math.cos(a2),y2=80+70*Math.sin(a2);
+    paths+='<path d="M80,80 L'+x1+','+y1+' A70,70 0 '+(pct>.5?1:0)+',1 '+x2+','+y2+' Z" fill="'+COLOR_HEX[cat.color]+'"/>';}
+    lh+='<div class="pie-legend-item"><div class="pie-legend-dot" style="background:'+COLOR_HEX[cat.color]+'"></div>'+esc(cat.name)+' '+bc[i].toFixed(1)+'h</div>';
+  });svg.innerHTML=paths;leg.innerHTML=lh;
+}
+function saveGoal(){goal=parseInt(document.getElementById('goalInput').value)||20;save();renderGoal()}
+function renderGoal(){document.getElementById('goalInput').value=goal;const tw=weekTotal(0),pct=Math.min(100,Math.round(tw/goal*100));document.getElementById('goalFill').style.width=pct+'%';document.getElementById('goalPct').textContent=pct+'%'}
+function renderStreak(){
+  const grid=document.getElementById('streakGrid'),today=new Date(),dow=today.getDay(),mon=dow===0?-6:1-dow;
+  const start=new Date(today);start.setDate(start.getDate()+mon-7*7);
+  const dates={};logs.forEach(l=>dates[l.date]=(dates[l.date]||0)+l.hours);
+  let cells='';for(let i=0;i<56;i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const h=dates[ds]||0,lvl=h===0?'':h<1?'l1':h<2?'l2':h<4?'l3':'l4';cells+='<div class="streak-cell '+lvl+'" title="'+ds+': '+(h?h.toFixed(1)+'h':'—')+'"></div>'}
+  grid.innerHTML=cells;document.getElementById('streakNum').textContent=calcStreak();
+}
+function saveSettings(){settings.work=parseInt(document.getElementById('setWork').value)||25;settings.break=parseInt(document.getElementById('setBreak').value)||5;save();if(!pomoState.running){pomoState.remaining=settings.work*60;updatePomoDisplay()}}
+function renderSettings(){
+  document.getElementById('setWork').value=settings.work;document.getElementById('setBreak').value=settings.break;
+  document.getElementById('catEditor').innerHTML=cats.map((c,i)=>'<div class="setting-row"><input class="setting-input" style="width:120px;text-align:left" value="'+esc(c.name)+'" onchange="renameCat('+i+',this.value)"><button class="setting-btn danger-btn" onclick="delCat('+i+')" style="padding:6px 12px;font-size:12px">削除</button></div>').join('')+(cats.length<5?'<button class="setting-btn export-btn" onclick="addCat()" style="margin-top:8px">+ カテゴリ追加</button>':'');
+}
+function renameCat(i,n){if(n.trim()){cats[i].name=n.trim();save();renderCatChips('pomoCats',pomoState.catIdx,'setPomoCat')}}
+function addCat(){if(cats.length>=5){toast('カテゴリは5個まで');return}cats.push({name:'新規',color:cats.length});save();renderSettings()}
+function delCat(i){if(cats.length<=1){toast('最低1つ必要');return}cats.splice(i,1);save();renderSettings()}
+function exportJSON(){
+  toast('📦 エクスポートは製品版で利用できます');return;
+}
+function importJSON(input){
+  toast('📂 インポートは製品版で利用できます');return;
+}
+function exportCSV(){
+  toast('\u{1F4E6} \u30A8\u30AF\u30B9\u30DD\u30FC\u30C8\u306F\u88FD\u54C1\u7248\u3067\u5229\u7528\u3067\u304D\u307E\u3059');return;
+}
+function clearAll(){if(!confirm('すべてのデータを削除しますか？'))return;Object.keys(localStorage).filter(function(k){return k.startsWith(P)}).forEach(function(k){localStorage.removeItem(k)});location.reload()}
+document.getElementById('dateLabel').textContent=(function(){var d=new Date(),w=['日','月','火','水','木','金','土'][d.getDay()];return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日（'+w+'）'})();
+document.getElementById('logDate').value=todayStr();
+pomoState.remaining=settings.work*60;
+renderCatChips('pomoCats',0,'setPomoCat');renderCatChips('logCats',0,'setLogCat');
+updatePomoDisplay();updatePomoStats();
+</script>
+</body>
+</html>
