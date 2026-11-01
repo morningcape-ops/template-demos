@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>売上かんたん記録</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap">
+<style>
+:root {
+  --accent: #3b82f6; --accent-hover: #2563eb;
+  --accent-soft: rgba(59,130,246,.07); --accent-glow: rgba(59,130,246,.15);
+  --bg: #faf9f7; --card: #ffffff; --ink: #1c1917; --sub: #78716c;
+  --muted: #a8a29e; --line: #e7e5e4; --line-soft: #f5f5f4;
+  --cat1: #3b82f6; --cat2: #f97316; --cat3: #8b5cf6; --cat4: #10b981; --cat5: #ec4899;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.04); --shadow-md: 0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.1);
+  --radius: 14px; --radius-sm: 10px;
+  --font: 'Noto Sans JP', system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#0c0a09;--card:#1c1917;--ink:#e7e5e4;--sub:#a8a29e;--muted:#57534e;--line:#292524;--line-soft:#1c1917;
+  --accent-soft:rgba(59,130,246,.12);--accent-glow:rgba(59,130,246,.2);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.2);--shadow-md:0 4px 16px rgba(0,0,0,.3);--shadow-lg:0 12px 40px rgba(0,0,0,.5);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"] {
+  --bg:#0c0a09;--card:#1c1917;--ink:#e7e5e4;--sub:#a8a29e;--muted:#57534e;--line:#292524;--line-soft:#1c1917;
+  --accent-soft:rgba(59,130,246,.12);--accent-glow:rgba(59,130,246,.2);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.2);--shadow-md:0 4px 16px rgba(0,0,0,.3);--shadow-lg:0 12px 40px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased}
+.header{background:linear-gradient(135deg,#1d4ed8 0%,#3b82f6 50%,#60a5fa 100%);color:#fff;padding:20px 20px 48px;text-align:center}
+.header h1{font-size:20px;font-weight:700;letter-spacing:.02em}
+.header p{font-size:12px;opacity:.8;margin-top:4px}
+.container{max-width:520px;margin:-32px auto 0;padding:0 16px 100px;position:relative}
+.tabs{display:flex;gap:2px;background:var(--card);border-radius:var(--radius);padding:4px;margin-bottom:16px;border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+.tab{flex:1;padding:10px 0;border:none;border-radius:var(--radius-sm);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--sub);transition:all .2s}
+.tab:hover{background:var(--line-soft)}
+.tab.active{background:var(--accent);color:#fff;box-shadow:var(--shadow-sm)}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+.card-title{font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.section{display:none}.section.active{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat-box{text-align:center;padding:12px 8px;background:var(--line-soft);border-radius:var(--radius-sm)}
+.stat-val{font-size:20px;font-weight:800;color:var(--accent)}
+.stat-lbl{font-size:10px;color:var(--sub);margin-top:2px;font-weight:500}
+.form-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.form-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px}
+.form-field.full{flex-basis:100%}
+.form-field label{font-size:10px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.06em}
+.form-field input,.form-field select{padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);background:var(--bg);color:var(--ink);transition:border-color .2s,box-shadow .2s}
+.form-field input:focus,.form-field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.btn-add{width:100%;padding:12px;border:none;border-radius:var(--radius-sm);background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font);margin-top:4px;transition:all .15s}
+.btn-add:hover{box-shadow:0 4px 16px rgba(59,130,246,.35);transform:translateY(-1px)}
+.btn-add:active{transform:scale(.97)}
+.log-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-soft)}
+.log-item:last-child{border-bottom:none}
+.log-dot{width:10px;height:10px;min-width:10px;border-radius:50%}
+.log-info{flex:1;min-width:0}
+.log-info-main{font-size:14px;font-weight:500}
+.log-info-sub{font-size:11px;color:var(--muted)}
+.log-amt{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.log-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px;line-height:1}
+.log-del:hover{color:#ef4444}
+.empty{text-align:center;padding:24px;color:var(--muted);font-size:13px}
+.cat-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.cat-chip{padding:6px 12px;border-radius:20px;border:1.5px solid var(--line);background:transparent;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);color:var(--sub);transition:all .2s}
+.cat-chip.active{color:#fff;border-color:transparent}
+.cat-chip[data-c="0"].active{background:var(--cat1)}.cat-chip[data-c="1"].active{background:var(--cat2)}
+.cat-chip[data-c="2"].active{background:var(--cat3)}.cat-chip[data-c="3"].active{background:var(--cat4)}
+.cat-chip[data-c="4"].active{background:var(--cat5)}
+.chart-wrap{padding:8px 0}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.bar-label{font-size:11px;font-weight:500;color:var(--sub);width:36px;text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:24px;background:var(--line-soft);border-radius:6px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:6px;transition:width .4s ease}
+.bar-val{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;width:64px;text-align:right;flex-shrink:0}
+.trend-row{display:flex;align-items:end;gap:4px;height:120px;padding:8px 0}
+.trend-bar{flex:1;background:var(--accent-soft);border-radius:4px 4px 0 0;min-height:4px;position:relative;cursor:pointer;transition:background .2s}
+.trend-bar:hover{background:var(--accent-glow)}
+.trend-bar .tip{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:10px;padding:3px 8px;border-radius:6px;white-space:nowrap;z-index:1}
+.trend-bar:hover .tip{display:block}
+.trend-labels{display:flex;gap:4px;margin-top:4px}
+.trend-labels span{flex:1;text-align:center;font-size:9px;color:var(--muted)}
+.footer{text-align:center;padding:16px;font-size:11px;color:var(--muted)}
+.footer a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>売上かんたん記録</h1>
+<p>日別の売上をサッと記録・集計</p>
+</div>
+<div class="container">
+
+<div class="tabs">
+<button class="tab active" onclick="showTab(0)">記録</button>
+<button class="tab" onclick="showTab(1)">集計</button>
+<button class="tab" onclick="showTab(2)">推移</button>
+</div>
+
+<!-- 記録 -->
+<div class="section active" id="sec0">
+<div class="card">
+<div class="card-title">今月の売上</div>
+<div class="stats-grid">
+<div class="stat-box"><div class="stat-val" id="st-total">¥0</div><div class="stat-lbl">合計</div></div>
+<div class="stat-box"><div class="stat-val" id="st-count">0</div><div class="stat-lbl">件数</div></div>
+<div class="stat-box"><div class="stat-val" id="st-avg">¥0</div><div class="stat-lbl">平均</div></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">売上を追加</div>
+<div class="form-row">
+<div class="form-field"><label>日付</label><input type="date" id="f-date"></div>
+<div class="form-field"><label>金額</label><input type="number" id="f-amount" placeholder="0" min="0"></div>
+</div>
+<div class="form-row">
+<div class="form-field"><label>カテゴリ</label>
+<select id="f-cat">
+<option value="0">売上A</option><option value="1">売上B</option>
+<option value="2">売上C</option><option value="3">売上D</option><option value="4">その他</option>
+</select></div>
+<div class="form-field"><label>メモ</label><input type="text" id="f-memo" placeholder="任意"></div>
+</div>
+<button class="btn-add" onclick="addEntry()">＋ 記録する</button>
+</div>
+<div class="card">
+<div class="card-title">直近の記録</div>
+<div id="log-list"></div>
+</div>
+</div>
+
+<!-- 集計 -->
+<div class="section" id="sec1">
+<div class="card">
+<div class="card-title">カテゴリ別 集計</div>
+<div id="cat-summary"></div>
+</div>
+<div class="card">
+<div class="card-title">日別ランキング（今月TOP5）</div>
+<div id="day-rank"></div>
+</div>
+</div>
+
+<!-- 推移 -->
+<div class="section" id="sec2">
+<div class="card">
+<div class="card-title">日別推移（今月）</div>
+<div class="chart-wrap"><div class="trend-row" id="trend-daily"></div><div class="trend-labels" id="trend-labels"></div></div>
+</div>
+<div class="card">
+<div class="card-title">月別推移</div>
+<div id="monthly-chart"></div>
+</div>
+</div>
+
+</div>
+<div class="footer">売上かんたん記録 — データはブラウザに自動保存</div>
+
+<script>
+const CATS = ['売上A','売上B','売上C','売上D','その他'];
+const CAT_COLORS = ['var(--cat1)','var(--cat2)','var(--cat3)','var(--cat4)','var(--cat5)'];
+let data = [];
+try { data = JSON.parse(localStorage.getItem('sales-data') || '[]'); } catch(e) {}
+
+function save() { try { localStorage.setItem('sales-data', JSON.stringify(data)); } catch(e) {} }
+
+function today() { return new Date().toISOString().slice(0, 10); }
+function thisMonth() { return today().slice(0, 7); }
+function fmt(n) { return '¥' + Number(n).toLocaleString(); }
+
+document.getElementById('f-date').value = today();
+
+function showTab(i) {
+  document.querySelectorAll('.tab').forEach((t,j) => t.classList.toggle('active', j===i));
+  document.querySelectorAll('.section').forEach((s,j) => s.classList.toggle('active', j===i));
+  if (i===1) renderSummary();
+  if (i===2) renderTrend();
+}
+
+function addEntry() {
+  const d = document.getElementById('f-date').value;
+  const a = parseInt(document.getElementById('f-amount').value);
+  const c = parseInt(document.getElementById('f-cat').value);
+  const m = document.getElementById('f-memo').value.trim();
+  if (!d || !a || a <= 0) return;
+  data.push({ id: Date.now(), date: d, amount: a, cat: c, memo: m });
+  data.sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+  save();
+  document.getElementById('f-amount').value = '';
+  document.getElementById('f-memo').value = '';
+  renderLog();
+  renderStats();
+}
+
+function delEntry(id) {
+  data = data.filter(e => e.id !== id);
+  save(); renderLog(); renderStats();
+}
+
+function renderStats() {
+  const m = thisMonth();
+  const items = data.filter(e => e.date.startsWith(m));
+  const total = items.reduce((s, e) => s + e.amount, 0);
+  document.getElementById('st-total').textContent = fmt(total);
+  document.getElementById('st-count').textContent = items.length;
+  document.getElementById('st-avg').textContent = items.length ? fmt(Math.round(total / items.length)) : '¥0';
+}
+
+function renderLog() {
+  const el = document.getElementById('log-list');
+  const recent = data.slice(0, 20);
+  if (!recent.length) { el.innerHTML = '<div class="empty">まだ記録がありません</div>'; return; }
+  el.innerHTML = recent.map(e => `
+    <div class="log-item">
+      <div class="log-dot" style="background:${CAT_COLORS[e.cat]}"></div>
+      <div class="log-info">
+        <div class="log-info-main">${CATS[e.cat]}${e.memo ? ' — ' + esc(e.memo) : ''}</div>
+        <div class="log-info-sub">${e.date}</div>
+      </div>
+      <div class="log-amt">${fmt(e.amount)}</div>
+      <button class="log-del" onclick="delEntry(${e.id})" title="削除">×</button>
+    </div>`).join('');
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function renderSummary() {
+  const m = thisMonth();
+  const items = data.filter(e => e.date.startsWith(m));
+  const totals = [0,0,0,0,0];
+  items.forEach(e => totals[e.cat] += e.amount);
+  const max = Math.max(...totals, 1);
+  document.getElementById('cat-summary').innerHTML = CATS.map((c, i) =>
+    `<div class="bar-row">
+      <div class="bar-label">${c}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${totals[i]/max*100}%;background:${CAT_COLORS[i]}"></div></div>
+      <div class="bar-val">${fmt(totals[i])}</div>
+    </div>`).join('');
+
+  const byDay = {};
+  items.forEach(e => { byDay[e.date] = (byDay[e.date] || 0) + e.amount; });
+  const ranked = Object.entries(byDay).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const dEl = document.getElementById('day-rank');
+  if (!ranked.length) { dEl.innerHTML = '<div class="empty">データなし</div>'; return; }
+  dEl.innerHTML = ranked.map(([d, v], i) =>
+    `<div class="log-item">
+      <div style="width:20px;text-align:center;font-weight:700;color:${i<3?'var(--accent)':'var(--muted)'}">${i+1}</div>
+      <div class="log-info"><div class="log-info-main">${d}</div></div>
+      <div class="log-amt">${fmt(v)}</div>
+    </div>`).join('');
+}
+
+function renderTrend() {
+  const m = thisMonth();
+  const items = data.filter(e => e.date.startsWith(m));
+  const y = parseInt(m.slice(0,4)), mo = parseInt(m.slice(5,7));
+  const days = new Date(y, mo, 0).getDate();
+  const byDay = {};
+  items.forEach(e => { const d = parseInt(e.date.slice(8,10)); byDay[d] = (byDay[d]||0) + e.amount; });
+  const max = Math.max(...Object.values(byDay), 1);
+  const tEl = document.getElementById('trend-daily');
+  const lEl = document.getElementById('trend-labels');
+  tEl.innerHTML = ''; lEl.innerHTML = '';
+  for (let d = 1; d <= days; d++) {
+    const v = byDay[d] || 0;
+    const h = v ? Math.max(v / max * 100, 4) : 2;
+    const bar = document.createElement('div');
+    bar.className = 'trend-bar';
+    bar.style.height = h + '%';
+    if (v) { bar.style.background = 'var(--accent)'; bar.innerHTML = `<div class="tip">${d}日: ${fmt(v)}</div>`; }
+    tEl.appendChild(bar);
+    if (d === 1 || d === 10 || d === 20 || d === days) {
+      const sp = document.createElement('span'); sp.textContent = d + '日'; lEl.appendChild(sp);
+    } else { const sp = document.createElement('span'); sp.textContent = ''; lEl.appendChild(sp); }
+  }
+
+  const months = {};
+  data.forEach(e => { const k = e.date.slice(0,7); months[k] = (months[k]||0) + e.amount; });
+  const sorted = Object.entries(months).sort((a,b) => a[0].localeCompare(b[0])).slice(-6);
+  const mMax = Math.max(...sorted.map(e => e[1]), 1);
+  document.getElementById('monthly-chart').innerHTML = sorted.length ?
+    sorted.map(([k, v]) => `<div class="bar-row">
+      <div class="bar-label">${k.slice(5)}月</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${v/mMax*100}%;background:var(--accent)"></div></div>
+      <div class="bar-val">${fmt(v)}</div>
+    </div>`).join('') : '<div class="empty">データなし</div>';
+}
+
+renderLog();
+renderStats();
+</script>
+</body>
+</html>
